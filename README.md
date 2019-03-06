@@ -9,7 +9,7 @@ extracted from the PDF documents that the various medical boards provides.
 
 **Directories**
 
-classifiers : subdirectories for the various classifiers
+>classifiers : subdirectories for the various classifiers
 
 >data : holds the subdirectories for training and testing data   
 
