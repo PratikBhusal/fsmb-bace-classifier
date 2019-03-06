@@ -9,9 +9,9 @@ class ClassifierWrapper(ABC):
 		"""
 
 		:param file_id: a hashable ID for this particular file
-		:param tokenized_file:
+		:param tokenized_file: a
 		:param true_label:
-		:return:
+		:return: None
 		"""
 		raise NotImplementedError
 
