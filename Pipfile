@@ -4,12 +4,16 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+mypy = "*"
+numpydoc = "*"
+sphinx = "*"
 
 [packages]
-pandas = "*"
-nltk = "*"
-scikit-learn = "*"
+# Note: cython needed to get fasttext working. Ensure cython is installed first.
+# fasttext = "*"
+cython = "*"
 keras = "*"
-
-[requires]
-python_version = "3.7"
+nltk = "*"
+numpy = "*"
+pandas = "*"
+scikit-learn = "*"
