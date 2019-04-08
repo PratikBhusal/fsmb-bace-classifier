@@ -4,7 +4,7 @@ import pandas as pd
 
 class ClassifierWrapper(ABC):
 
-	@abstractmethod
+	#@abstractmethod
 	def add_data(self, file_id, tokenized_file, true_label):
 		"""
 
@@ -15,7 +15,7 @@ class ClassifierWrapper(ABC):
 		"""
 		raise NotImplementedError
 
-	@abstractmethod
+	#@abstractmethod
 	def get_data(self):
 		"""
 
@@ -24,7 +24,7 @@ class ClassifierWrapper(ABC):
 		"""
 		raise NotImplementedError
 
-	@abstractmethod
+	#@abstractmethod
 	def train(self):
 		"""
 		This classifier object will train on all the data that has been added to it using the adddata method
@@ -32,7 +32,7 @@ class ClassifierWrapper(ABC):
 		"""
 		raise NotImplementedError
 
-	@abstractmethod
+	#@abstractmethod
 	def predict(self, tokenized_file, minimum_confidence=.8):
 		"""
 

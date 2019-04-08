@@ -1,13 +1,10 @@
-import classifiers.neural.neural_constants as neural_constants
-import classifiers.neural.data_slicer as data_slicer
-
 import numpy as np
 
 from sklearn.metrics import confusion_matrix
 import classifiers.neural.neural_constants as neural_constants
 import classifiers.neural.data_slicer as data_slicer
 
-from classifier_interface import ClassifierWrapper as CW
+from classifiers.classifier_interface import ClassifierWrapper as CW
 from keras.models import Sequential
 from keras import layers
 from keras.preprocessing.text import Tokenizer
@@ -15,7 +12,7 @@ from keras.preprocessing.sequence import pad_sequences
 
 from classifiers.neural.glove import load_glove
 
-from typing import List, Dict
+from typing import Dict
 
 def load_glove(fname : str, word_index : Dict[str, int]):
     """
