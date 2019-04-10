@@ -1,3 +1,4 @@
-classifiers/neural/glove_embeddings/*
-classifiers/filtered_data/*
+bace/classifiers/neural/glove_embeddings/
 .idea/
+data/
+filtered_data/
