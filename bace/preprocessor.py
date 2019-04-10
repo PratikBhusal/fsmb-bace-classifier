@@ -181,8 +181,7 @@ def export_fasttext_data(df: pd.DataFrame, output_name: str,
                get_slices(df, slice_length, overlap_percent).values,
                fmt="%s")
 
-
-if __name__ == "__main__":
+def main():
     train_df, test_df = split_dataset(export_extras=True, split_percent=0.8)
 
     train_slice_name = os.path.join(os.getcwd(), "filtered_data",
@@ -192,3 +191,6 @@ if __name__ == "__main__":
 
     export_fasttext_data(train_df, train_slice_name, slice_length=10)
     export_fasttext_data(test_df, test_slice_name, slice_length=10)
+
+if __name__ == "__main__":
+    main()
