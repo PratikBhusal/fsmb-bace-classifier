@@ -1,6 +1,6 @@
-import bace.classifiers.bayesian.bag_of_words as bow
-import bace.classifiers.bayesian.fasttext as ft
-from os.path import join as path_join
+from   bace.classifiers.bayesian import bag_of_words as bow
+from   bace.classifiers.fasttext import fasttext     as ft
+from   os.path                   import join         as path_join
 import argparse
 
 def construct_parser():
