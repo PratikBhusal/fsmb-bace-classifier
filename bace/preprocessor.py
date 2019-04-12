@@ -181,16 +181,18 @@ def get_slices(all_texts_df: pd.DataFrame,
 
 
 def export_fasttext_data(df: pd.DataFrame, output_name: str,
-                         slice_length: int = 25, overlap_percent: float = 0):
+                         slice_length: Optional[int] = 25,
+                         overlap_percent: float = 0):
 
     if not os.path.exists(os.path.dirname(output_name)):
         os.makedirs(os.path.dirname(output_name))
 
     df["label"] = "__label__" + df["label"]
     df.drop(columns=["filename"], inplace=True)
-    np.savetxt(output_name,
-               get_slices(df, slice_length, overlap_percent).values,
-               fmt="%s")
+    if slice_length:
+        np.savetxt(output_name,
+                get_slices(df, slice_length, overlap_percent).values,
+                fmt="%s")
 
 
 def main():
