@@ -1,6 +1,6 @@
 from glob import glob, iglob
 from nltk.corpus import stopwords
-from typing import List, Iterable, Text, Container, Tuple
+from typing import List, Iterable, Text, Container, Tuple, Optional
 import numpy as np
 import os
 import pandas as pd
@@ -64,7 +64,11 @@ def filter_texts(filenames: Iterable[Text],
     ]))
 
 
-def yield_files(should_export: bool = False) -> Iterable[pd.DataFrame]:
+def yield_files(should_export_extras: bool = False,
+                input_dir: str = "data",
+                output_dir: str = "filtered_data",
+                stopwords_file_path: Optional[str] = None
+                ) -> Iterable[pd.DataFrame]:
     def squash_texts(texts: List[Tokens_str]) -> List[Token]:
         return [
             token
@@ -73,21 +77,22 @@ def yield_files(should_export: bool = False) -> Iterable[pd.DataFrame]:
         ]
 
     stop_words = set(stopwords.words('english'))
-    with open("Distinct Combined Stop Words.csv", "r") as fsmb_stop_words:
-        stop_words.update(fsmb_stop_words.read().splitlines())
+    if stopwords_file_path:
+        with open(stopwords_file_path, "r") as fsmb_stop_words:
+            stop_words.update(fsmb_stop_words.read().splitlines())
 
-    filtered_folder = os.path.join(os.getcwd(), "filtered_data")
-    if should_export and not os.path.exists(filtered_folder):
+    filtered_folder = os.path.abspath(output_dir)
+    if should_export_extras and not os.path.exists(filtered_folder):
         os.makedirs(filtered_folder)
 
-    for folder_path in iglob(os.path.join(os.getcwd(), "data", "*")):
+    for folder_path in iglob(os.path.join(os.path.abspath(input_dir), "*")):
         full_file_names = glob(os.path.join(folder_path, "*.txt"))
         texts = filter_texts(full_file_names, stop_words)
 
         if texts:
             folder_name = os.path.basename(folder_path)
             export_folder = os.path.join(filtered_folder, folder_name)
-            if should_export and not os.path.exists(export_folder):
+            if should_export_extras and not os.path.exists(export_folder):
                 os.makedirs(export_folder)
 
             base_names = [os.path.basename(name) for name in full_file_names]
@@ -98,24 +103,30 @@ def yield_files(should_export: bool = False) -> Iterable[pd.DataFrame]:
                 "tokens": texts
             })
 
-            if should_export:
+            if should_export_extras:
                 texts_df.to_csv(os.path.join(export_folder, "texts.csv"),
                                 index=False)
 
             yield texts_df
 
 
-def split_dataset(export_extras: bool = False, split_percent: float = 0.8
+def split_dataset(should_export_extras: bool = False,
+                  split_percent: float = 0.8,
+                  input_dir: str = "data",
+                  output_dir: str = "filtered_data",
+                  stopwords_file_path: Optional[str] = None
                   ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-    if export_extras:
+    if should_export_extras:
         full_arr: List[Tuple[str, str, str]] = []
 
     train_arr: List[Tuple[str, str, str]] = []
     test_arr: List[Tuple[str, str, str]] = []
 
-    for df in yield_files(export_extras):
-        if export_extras:
+    for df in yield_files(should_export_extras=should_export_extras,
+                          input_dir=input_dir, output_dir=output_dir,
+                          stopwords_file_path=stopwords_file_path):
+        if should_export_extras:
             full_arr.extend(df.values)
 
         sample_train = df.sample(frac=split_percent)
@@ -128,8 +139,8 @@ def split_dataset(export_extras: bool = False, split_percent: float = 0.8
     test_df = pd.DataFrame(test_arr,
                            columns=["filename", "label", "tokens"])
 
-    filtered_folder = os.path.join(os.getcwd(), "filtered_data")
-    if export_extras:
+    filtered_folder = os.path.abspath(output_dir)
+    if should_export_extras:
         if not os.path.exists(filtered_folder):
             os.makedirs(filtered_folder)
 
@@ -181,8 +192,10 @@ def export_fasttext_data(df: pd.DataFrame, output_name: str,
                get_slices(df, slice_length, overlap_percent).values,
                fmt="%s")
 
+
 def main():
-    train_df, test_df = split_dataset(export_extras=True, split_percent=0.8)
+    train_df, test_df = split_dataset(should_export_extras=True,
+                                      split_percent=0.8)
 
     train_slice_name = os.path.join(os.getcwd(), "filtered_data",
                                     "fasttext_train.txt")
@@ -191,6 +204,7 @@ def main():
 
     export_fasttext_data(train_df, train_slice_name, slice_length=10)
     export_fasttext_data(test_df, test_slice_name, slice_length=10)
+
 
 if __name__ == "__main__":
     main()
