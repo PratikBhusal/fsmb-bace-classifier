@@ -2,6 +2,7 @@ from   bace.classifiers.bayesian import bag_of_words as bow
 from   bace.classifiers.fasttext import fasttext     as ft
 from   os.path                   import join         as path_join
 import argparse
+import bace.preprocessor as pp
 
 def construct_parser():
     parser = argparse.ArgumentParser(description='Classify documents and subsections using various NLP techniques')
@@ -18,8 +19,7 @@ def construct_parser():
     #                                                         'classification')
 
 
-    parser.add_argument('-r', '--raw', type=str, help='input data is raw, will be preprocessed then output to given '
-                                                      'directory')
+    parser.add_argument('-f', '--filter', type=str, help='input data is already filtered, default false')
 
     output_group = parser.add_mutually_exclusive_group()
     output_group.add_argument('-s', '--slicedata', type=str, help='output sliced results of a given file')
@@ -30,8 +30,6 @@ def construct_parser():
 
 def main():
     args = construct_parser().parse_args()
-
-    if
 
 if __name__ == "__main__":
     main()

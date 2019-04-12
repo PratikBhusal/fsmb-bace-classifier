@@ -12,8 +12,7 @@ class BagOfWords(Classifier):
         dataset = pd.read_csv(filename)
         return dataset['label'].tolist(), dataset['tokens'].tolist()
 
-    def get_classifier(self, train_labels: List[Text], train_data:List[Text],
-                  num: int = 500):
+    def get_classifier(self, train_labels: List[Text], train_data:List[Text], num: int = 200):
         classifier = GaussianNB()
         classifier.fit(CountVectorizer(max_features = num).fit_transform(train_data).toarray(),train_labels)
         return classifier
@@ -21,7 +20,8 @@ class BagOfWords(Classifier):
     def predict(self, classifier: GaussianNB, test_data:List[Text], num: int = 200):
         return classifier.predict(CountVectorizer(max_features = num).fit_transform(test_data).toarray())
 
-    def show_metrics(self, test_labels: List[Text], class_prediction: List[Text]):
-        print(confusion_matrix(test_labels,class_prediction))
-        print(classification_report(test_labels,class_prediction))
-        print(accuracy_score(test_labels,class_prediction))
+
+def show_metrics(test_labels: List[Text], class_prediction: List[Text]):
+    print(confusion_matrix(test_labels,class_prediction))
+    print(classification_report(test_labels,class_prediction))
+    print(accuracy_score(test_labels,class_prediction))
