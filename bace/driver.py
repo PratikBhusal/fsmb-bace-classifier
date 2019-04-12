@@ -10,16 +10,13 @@ def construct_parser():
     # parser.add_argument('test', type=str, help='test file or directory')
 
     input_group = parser.add_mutually_exclusive_group()
-    input_group.add_argument('-d', '--data', type=str, help='folder containing input data directories')
-    input_group.add_argument('-c', '--classifier', type=str, default='bow', help='used classifier from {bow '
-                                                                                          '(bag of '
-                                                                             'words), '
-                                                                   'fasttext}')
+    input_group.add_argument('-d', '--data', type=str, required=True, help='folder containing input data directories')
+   # input_group.add_argument('-c', '--classifier', type=str, default='bow', help='used classifier from')
     #parser.add_argument('-n', '--numfeatures', type=int, default=200, help='number of features to use in '
     #                                                         'classification')
 
 
-    parser.add_argument('-f', '--filter', type=str, help='input data is already filtered, default false')
+    parser.add_argument('-f', '--filter', type=str, help='input data is already filtered')
 
     output_group = parser.add_mutually_exclusive_group()
     output_group.add_argument('-s', '--slicedata', type=str, help='output sliced results of a given file')
