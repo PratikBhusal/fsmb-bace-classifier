@@ -1,6 +1,6 @@
 from glob import glob, iglob
 from nltk.corpus import stopwords
-from typing import List, Iterable, Text, Container, Tuple, Optional
+from typing import List, Iterable, Text, Container, Tuple, Optional, Dict
 import numpy as np
 import os
 import pandas as pd
@@ -11,22 +11,15 @@ Tokens_str = Token
 Tokens = List[Token]
 
 
-def filter_texts(filenames: Iterable[Text],
-                 stop_words: Container[Text]) -> List[Tokens_str]:
+def filter_tokens(tokens: Iterable[Text],
+                  stop_words: Optional[Container[Text]]) -> Tokens_str:
     from re import compile as regex
     from string import printable as printable_chars
 
-    ws_filter = regex(r"\s+")
     email_filter = regex(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
     punc_filter = regex(r"[!#$&%()*+./:;<=>?@^_`{|}~,\-\\\"\']+")
     num_filter = regex("[0-9]+")
     enum_filter = regex(r"^\(?\w+([,.]\)?|[,.\)])")
-
-    def files(filenames: Iterable[Text]) -> Iterable[Tokens]:
-        for filename in filenames:
-            with open(filename, 'rb') as f:
-                decoded_str = f.read().decode(errors="ignore").strip().lower()
-                yield ws_filter.split(decoded_str)
 
     def yield_filtered_tokens(tokens: Iterable[Token]) -> Iterable[Token]:
         def filter_token(token: Text) -> Text:
@@ -40,7 +33,9 @@ def filter_texts(filenames: Iterable[Text],
                     return ''.join(enum_filter.split(token))
                 return ''
 
-            if token in stop_words or email_filter.match(token):
+            if email_filter.match(token) or (
+                stop_words and token in stop_words
+            ):
                 return ''
             # Strip enumeration from token
             token = strip_enum(token)
@@ -58,54 +53,63 @@ def filter_texts(filenames: Iterable[Text],
             if filtered_token:
                 yield filtered_token
 
-    return list(filter(None, [
-        ' '.join(token for token in yield_filtered_tokens(tokens))
-        for tokens in files(filenames)
-    ]))
+    return ' '.join(token for token in yield_filtered_tokens(tokens))
 
 
-def yield_files(should_export_extras: bool = False,
-                input_dir: str = "data",
-                output_dir: str = "filtered_data",
-                stopwords_file_path: Optional[str] = None
-                ) -> Iterable[pd.DataFrame]:
-    def squash_texts(texts: List[Tokens_str]) -> List[Token]:
-        return [
-            token
-            for tokens in texts
-            for token in tokens.split()
-        ]
+def get_filtered_file(filename: Text,
+                      stop_words: Optional[Container[Text]] = None
+                      ) -> Tokens_str:
+    from re import compile as regex
 
-    stop_words = set(stopwords.words('english'))
-    if stopwords_file_path:
-        with open(stopwords_file_path, "r") as fsmb_stop_words:
-            stop_words.update(fsmb_stop_words.read().splitlines())
+    ws_filter = regex(r"\s+")
+    with open(filename, 'rb') as f:
+        decoded_str = f.read().decode(errors="ignore").strip().lower()
+        return filter_tokens(ws_filter.split(decoded_str), stop_words)
 
+    raise ValueError("Invalid File name!")
+
+
+def yield_filtered_files(should_export_extras: bool = False,
+                         input_dir: str = "data",
+                         output_dir: str = "filtered_data",
+                         stop_words: Optional[Container[Text]] = None
+                         ) -> Iterable[pd.DataFrame]:
     filtered_folder = os.path.abspath(output_dir)
     if should_export_extras and not os.path.exists(filtered_folder):
         os.makedirs(filtered_folder)
 
     for folder_path in iglob(os.path.join(os.path.abspath(input_dir), "*")):
-        full_file_names = glob(os.path.join(folder_path, "*.txt"))
-        texts = filter_texts(full_file_names, stop_words)
+        valid_file_data: Dict[Text, Tokens_str] = {
+            k: v for k, v in {
+                file_name: get_filtered_file(file_name, stop_words)
+                for file_name in glob(os.path.join(folder_path, "*.txt"))
+            }.items()
+            if v
+        }
 
-        if texts:
+        if valid_file_data:
             folder_name = os.path.basename(folder_path)
-            export_folder = os.path.join(filtered_folder, folder_name)
-            if should_export_extras and not os.path.exists(export_folder):
-                os.makedirs(export_folder)
 
-            base_names = [os.path.basename(name) for name in full_file_names]
-
+            # base_names = [os.path.basename(name) for name in valid_file_data]
             texts_df = pd.DataFrame({
-                "filename": base_names,
+                "filename": list(
+                    os.path.basename(name) for name in valid_file_data.keys()
+                ),
                 "label": folder_name,
-                "tokens": texts
+                "tokens": list(valid_file_data.values())
             })
 
+
             if should_export_extras:
-                texts_df.to_csv(os.path.join(export_folder, "texts.csv"),
-                                index=False)
+                export_folder = os.path.join(filtered_folder, folder_name)
+
+                if not os.path.exists(export_folder):
+                    os.makedirs(export_folder)
+
+                texts_df.to_csv(
+                    os.path.join(export_folder, "texts.csv"), index=False,
+                    columns=["filename", "tokens"]
+                )
 
             yield texts_df
 
@@ -123,9 +127,14 @@ def split_dataset(should_export_extras: bool = False,
     train_arr: List[Tuple[str, str, str]] = []
     test_arr: List[Tuple[str, str, str]] = []
 
-    for df in yield_files(should_export_extras=should_export_extras,
-                          input_dir=input_dir, output_dir=output_dir,
-                          stopwords_file_path=stopwords_file_path):
+    stop_words = set(stopwords.words('english'))
+    if stopwords_file_path:
+        with open(stopwords_file_path, "r") as fsmb_stop_words:
+            stop_words.update(fsmb_stop_words.read().splitlines())
+
+    for df in yield_filtered_files(should_export_extras=should_export_extras,
+                                   input_dir=input_dir, output_dir=output_dir,
+                                   stop_words=stop_words):
         if should_export_extras:
             full_arr.extend(df.values)
 
@@ -190,9 +199,11 @@ def export_fasttext_data(df: pd.DataFrame, output_name: str,
     df["label"] = "__label__" + df["label"]
     df.drop(columns=["filename"], inplace=True)
     if slice_length:
-        np.savetxt(output_name,
-                get_slices(df, slice_length, overlap_percent).values,
-                fmt="%s")
+        np.savetxt(
+            output_name,
+            get_slices(df, slice_length, overlap_percent).values,
+            fmt="%s"
+        )
 
 
 def main():
