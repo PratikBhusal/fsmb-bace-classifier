@@ -8,12 +8,9 @@ def construct_parser_nn(subparser):
         help='Path to input training data'
     )
     subparser.add_argument(
-        'glove_embedding', type=str, default="data", metavar="input-dir",
-        help='Path to glove embedding file'
-    )
-    subparser.add_argument(
-        'glove_dimensions', type=str, default="data", metavar="input-dir",
-        help='Number of dimensions in input glove vector'
+        '-g', '--glove_embedding', type=str,
+        default="data", metavar="input-dir",
+        help='Path to glove embedding file and its number of dimensions'
     )
 
     subparser.add_argument(

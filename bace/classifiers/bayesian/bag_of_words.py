@@ -64,6 +64,8 @@ def construct_parser_bow(subparser):
             formatter_class=argparse.ArgumentDefaultsHelpFormatter
         )
     """
+    #subparser.set_defaults(description="BAG OF WORDS ASDJFAHEKJD")
+
     subparser.add_argument(
         'training_file', type=str, default="data_clean", metavar="input-dir",
         help='Path to training .csv'
@@ -80,7 +82,6 @@ def construct_parser_bow(subparser):
         '-n', '--num_features', type=int, default=200,
         help='number of features to use in bag of words classification'
     )
-
 
     # Make results showing options mutually exclusive
     subparser.add_argument(
