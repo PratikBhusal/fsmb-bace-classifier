@@ -19,7 +19,7 @@ class ClassifierWrapper(ABC):
 	def get_data(self):
 		"""
 
-		:return: A structure [(file_id, tokenized_file, true_label),...] for all data added to this classifier with
+		:return: A structure [(file_id, tokenized_file, true_label),...] for all data_clean added to this classifier with
 		the add_data method
 		"""
 		raise NotImplementedError
@@ -27,7 +27,7 @@ class ClassifierWrapper(ABC):
 	#@abstractmethod
 	def train(self):
 		"""
-		This classifier object will train on all the data that has been added to it using the adddata method
+		This classifier object will train on all the data_clean that has been added to it using the adddata method
 		:return:
 		"""
 		raise NotImplementedError
@@ -37,7 +37,7 @@ class ClassifierWrapper(ABC):
 		"""
 
 		:param tokenized_file: the array containing the ordered, sanitized word tokens from a single file
-		:param minimum_confidence: the minimum confidence level required to the classifier to label a data point as
+		:param minimum_confidence: the minimum confidence level required to the classifier to label a data_clean point as
 		any given class. Only used by applicable classifiers.
 		:return: a list of tuples of [(class label, confidence)] for each class label where confidence >
 		minimum_confidence. Confidence will be 1 for classifiers where confidence is not a normally used feature.

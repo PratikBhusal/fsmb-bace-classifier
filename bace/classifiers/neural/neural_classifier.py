@@ -1,16 +1,15 @@
 import numpy as np
 
 from sklearn.metrics import confusion_matrix
-import classifiers.neural.neural_constants as neural_constants
-import classifiers.neural.data_slicer as data_slicer
+import bace.classifiers.neural.neural_constants as neural_constants
+import bace.classifiers.neural.data_slicer as data_slicer
 
-from classifiers.classifier_interface import ClassifierWrapper as CW
 from keras.models import Sequential
 from keras import layers
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 
-from classifiers.neural.glove import load_glove
+from bace.classifiers.neural.glove import load_glove
 
 from typing import Dict
 
@@ -31,10 +30,10 @@ def load_glove(fname : str, word_index : Dict[str, int]):
         return data
 
 
-class NeuralClassifier(CW):
+class NeuralClassifier:
 
     def __init__(self):
-        # a list of tuples of (type, data, true_label)
+        # a list of tuples of (type, data_clean, true_label)
         self.labelled_data = []
         self.labelled_validation_data = []
         self.model = None
@@ -67,14 +66,14 @@ class NeuralClassifier(CW):
     def get_data(self):
         """
 
-		:return: A structure [(file_id, tokenized_file, true_label),...] for all data added to this classifier with
+		:return: A structure [(file_id, tokenized_file, true_label),...] for all data_clean added to this classifier with
 		the add_data method
 		"""
         raise NotImplementedError
 
     def train(self):
         """
-		This classifier object will train on all the data that has been added to it using the adddata method
+		This classifier object will train on all the data_clean that has been added to it using the adddata method
 		:return:
 		"""
 
@@ -87,7 +86,7 @@ class NeuralClassifier(CW):
         training_data = [text for _, text, _ in self.labelled_data]
         self.tokenizer.fit_on_texts(training_data)
 
-        # now build our training data
+        # now build our training data_clean
         X_train = self.tokenizer.texts_to_sequences(training_data)
         X_validation = self.tokenizer.texts_to_sequences([text for _, text, _ in self.labelled_validation_data])
 
@@ -195,7 +194,7 @@ class NeuralClassifier(CW):
         """
 
 		:param tokenized_file: the array containing the ordered, sanitized word tokens from a single file
-		:param minimum_confidence: the minimum confidence level required to the classifier to label a data point as
+		:param minimum_confidence: the minimum confidence level required to the classifier to label a data_clean point as
 		any given class. Only used by applicable classifiers.
 		:return: a list of tuples of [(class label, confidence)] for each class label where confidence >
 		minimum_confidence. Confidence will be 1 for classifiers where confidence is not a normally used feature.

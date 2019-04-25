@@ -2,7 +2,7 @@
 Constants for use by the neural classifier
 """
 
-# data slicing
+# data_clean slicing
 SLICE_LENGTH = 300
 SLICE_OVERLAP = .2
 

@@ -4,7 +4,7 @@ from typing import List, Iterable, Text, Container, Tuple, Optional, Dict
 import numpy as np
 import os
 import pandas as pd
-
+from argparse import ArgumentTypeError
 # Type aliases for filter_texts function
 Token = Text
 Tokens_str = Token
@@ -70,8 +70,8 @@ def get_filtered_file(filename: Text,
 
 
 def yield_filtered_files(should_export_extras: bool = False,
-                         input_dir: str = "data",
-                         output_dir: str = "filtered_data",
+                         input_dir: str = "data_clean",
+                         output_dir: str = "filtered_data_clean",
                          stop_words: Optional[Container[Text]] = None
                          ) -> Iterable[pd.DataFrame]:
     filtered_folder = os.path.abspath(output_dir)
@@ -117,7 +117,7 @@ def yield_filtered_files(should_export_extras: bool = False,
 def split_dataset(should_export_extras: bool = False,
                   split_percent: float = 0.8,
                   input_dir: str = "data",
-                  output_dir: str = "filtered_data",
+                  output_dir: str = "filtered_data_clean",
                   stopwords_file_path: Optional[str] = None
                   ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
@@ -205,14 +205,79 @@ def export_fasttext_data(df: pd.DataFrame, output_name: str,
             fmt="%s"
         )
 
+def construct_parser_preprocessor(subparser):
+    def within_percent_interval(interval_str: str) -> float:
+        interval = float(interval_str)
+        if interval < 0 or interval > 1:
+            raise ArgumentTypeError("Input given is out of bounds!")
+
+        return interval
+    """
+    if subparser:
+        preprocess_parser = subparser.add_parser(
+            "preprocess",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            help="Preprocess given dataset",
+        )
+    else:
+        preprocess_parser = argparse.ArgumentParser(
+            description='Preprocess given dataset',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        )
+    """
+
+    subparser.add_argument(
+        'inputdir', type=str, default="data_clean", metavar="input-dir",
+        help='Input directory to preprocess'
+    )
+
+    subparser.add_argument(
+        '-o', '--outputdir', type=str, default="filtered_data",
+        help='Output directory to hold preprocessed data_clean'
+    )
+
+    subparser.add_argument(
+        '--stopwords', type=str, default=None,
+        help='Path to the .csv stop words file'
+    )
+
+    # Make file generation options mutually exclusive
+    # Note, all 3 of the flags appear. However, we only want 1 of them to
+    # appear.
+    subparser.add_argument(
+        '--export', type=str, default="single",
+        choices=["single", "split", "both"],
+        help='Indicate whether you only want a single file holding all of the \
+        preprocessed data_clean, or both. If "split\" or "both" were chosen, the \
+        split is based on "--train-split" or "--test-split" or have the train \
+        split be 80%% of the raw data_clean if neither argument was given.'
+    )
+
+    subparser.add_argument(
+        '--train-split', type=within_percent_interval, default=.8, metavar="[0-1]",
+        help="Percentage in interval [0,1] of total data_clean going to the \
+        training dataset."
+    )
+
+    subparser.set_defaults(run=run_preprocessor)
+
+
+def run_preprocessor(args):
+    train_df, test_df = split_dataset(
+        should_export_extras=True,
+        split_percent=args.train_split,
+        input_dir=args.inputdir,
+        output_dir=args.outputdir,
+        stopwords_file_path=args.stopwords
+    )
 
 def main():
     train_df, test_df = split_dataset(should_export_extras=True,
                                       split_percent=0.8)
 
-    train_slice_name = os.path.join(os.getcwd(), "filtered_data",
+    train_slice_name = os.path.join(os.getcwd(), "filtered_data_clean",
                                     "fasttext_train.txt")
-    test_slice_name = os.path.join(os.getcwd(), "filtered_data",
+    test_slice_name = os.path.join(os.getcwd(), "filtered_data_clean",
                                    "fasttext_test.txt")
 
     export_fasttext_data(train_df, train_slice_name, slice_length=10)
