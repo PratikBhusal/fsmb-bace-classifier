@@ -125,4 +125,7 @@ dmypy.json
 # Project specific ignores
 bace/classifiers/neural/glove_embeddings/
 .idea/
+data/
+filtered_data/
 bace_data/
+glove_embeddings/

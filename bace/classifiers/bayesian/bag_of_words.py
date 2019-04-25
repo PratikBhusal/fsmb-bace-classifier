@@ -89,5 +89,4 @@ def construct_parser_bow(subparser):
         help="Flag to just show metrics instead of predictions"
     )
 
-
     subparser.set_defaults(run=run_bagofwords)
