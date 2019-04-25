@@ -1,9 +1,8 @@
-from classifiers.neural.neural_classifier import NeuralClassifier as NC
-from classifiers.neural.comparative_neural_classifier import ComparativeNeuralClassifier as CNC
+from bace.classifiers.neural.neural_classifier import NeuralClassifier as NC
+from bace.classifiers.neural.comparative_neural_classifier import ComparativeNeuralClassifier as CNC
+import bace.classifiers.neural.neural_constants as neural_constants
 
 from os import listdir
-import clean_data.data_constants as data_constants
-import classifiers.neural.neural_constants as neural_constants
 
 from random import shuffle
 

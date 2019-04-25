@@ -17,4 +17,5 @@ As above, reversed:
 python bace_driver.py bow bace_data/filtered_data/all_texts.csv -t bace_data/filtered_data_clean/all_texts.csv -n 300
 
 
-Good n value for bayesian = 300
+Good n value for bayesian on clean = 300 (got .6)
+Good n value for bayesian on unclean = 400 (got .41)

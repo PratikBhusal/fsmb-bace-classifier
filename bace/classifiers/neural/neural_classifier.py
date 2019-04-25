@@ -63,14 +63,6 @@ class NeuralClassifier:
 
         self.labelled_validation_data.append((file_id, data, true_label))
 
-    def get_data(self):
-        """
-
-		:return: A structure [(file_id, tokenized_file, true_label),...] for all data_clean added to this classifier with
-		the add_data method
-		"""
-        raise NotImplementedError
-
     def train(self):
         """
 		This classifier object will train on all the data_clean that has been added to it using the adddata method

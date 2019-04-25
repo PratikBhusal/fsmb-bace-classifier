@@ -2,8 +2,6 @@ from os.path import join as path_join
 import fasttext as ft
 
 def run_fasttext(args):
-    import bace.classifiers.fasttext.fasttext_classifier as ft
-
     raise NotImplementedError()
 
 def construct_parser_fasttext(subparser):

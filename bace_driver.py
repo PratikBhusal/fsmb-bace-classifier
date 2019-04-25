@@ -1,5 +1,6 @@
 from bace.classifiers.bayesian.bag_of_words import construct_parser_bow
 from bace.classifiers.fasttext.fasttext_classifier import construct_parser_fasttext
+from bace.classifiers.neural.neural_runner import construct_parser_nn
 from bace.preprocessor import construct_parser_preprocessor
 import argparse
 
@@ -8,6 +9,7 @@ def get_subparser_constructors():
         ('pp', construct_parser_preprocessor),
         ('ft', construct_parser_fasttext),
         ('bow', construct_parser_bow)
+        ('nn', construct_parser_nn)
     ]
 
 def construct_primary_parser():
@@ -21,7 +23,7 @@ def construct_primary_parser():
     subparsers.required = True
 
     for name, cons in get_subparser_constructors():
-        new_subparser = subparsers.add_parser(name)
+        new_subparser = subparsers.add_parser(construct_parser_nn)
         cons(new_subparser)
 
     return parser
