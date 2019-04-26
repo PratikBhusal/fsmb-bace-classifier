@@ -32,8 +32,6 @@ def show_metrics(test_labels: List[Text], class_prediction: List[Text]):
     print(classification_report(test_labels,class_prediction))
     print("Accuracy:", accuracy_score(test_labels,class_prediction))
 
-
-
 def run_bagofwords(args):
     train_fnames, train_labels, train_tokens = read_data(args.training_file)
     test_fnames, test_labels, test_tokens = read_data(args.test_file)
