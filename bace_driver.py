@@ -30,6 +30,7 @@ def construct_primary_parser():
 
 def main():
     args = construct_primary_parser().parse_args()
+    #print(args)
     args.run(args)
 
 if __name__ == "__main__":

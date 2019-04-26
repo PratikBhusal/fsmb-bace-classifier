@@ -15,6 +15,9 @@ GLOVE_DIMENSIONS = 100
 # neural_constants for use by the neural classifier
 MAX_NUMBER_TOKENS = 15000
 
+# default # of epochs
+NUM_EPOCHS = 10
+
 # if neural model should do diagnostic printing
 DIAGNOSTIC_PRINTING = True
 

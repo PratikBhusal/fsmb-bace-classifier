@@ -122,7 +122,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Project specific ignores
+# Project specific ignores for BACE
 bace/classifiers/neural/glove_embeddings/
 .idea/
 data/

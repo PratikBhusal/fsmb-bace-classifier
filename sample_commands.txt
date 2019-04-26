@@ -19,3 +19,8 @@ python bace_driver.py bow bace_data/filtered_data/all_texts.csv -t bace_data/fil
 
 Good n value for bayesian on clean = 300 (got .6)
 Good n value for bayesian on unclean = 400 (got .41)
+
+
+
+NN
+python bace_driver.py nn -i bace_data/data -g glove_embeddings/glove.6B.50d.txt 50 -e .8
