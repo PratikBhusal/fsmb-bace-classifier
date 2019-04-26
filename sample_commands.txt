@@ -1,8 +1,8 @@
 Takes the unclean data and filters it:
-python bace_driver.py pp bace_data/data -o bace_data/filtered_data --stopwords bace/DistinctCombinedStopWords.csv
+python bace_driver.py pp bace_data/data -o bace_data/filtered_data --stopwords bace/DistinctCombinedStopWords.csv --export all
 
 Takes the clean data and filters it:
-python bace_driver.py pp bace_data/data_clean -o bace_data/filtered_data_clean --stopwords bace/DistinctCombinedStopWords.csv
+python bace_driver.py pp bace_data/data_clean -o bace_data/filtered_data_clean --stopwords bace/DistinctCombinedStopWords.csv --export all
 
 Train and test on filtered, uncleaned data with BOW:
 python bace_driver.py bow bace_data/filtered_data/train_texts.csv -t bace_data/filtered_data/test_texts.csv -n 300
