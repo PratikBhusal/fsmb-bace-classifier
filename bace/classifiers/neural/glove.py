@@ -1,4 +1,4 @@
-import classifiers.neural.neural_constants as constants
+import bace.classifiers.neural.neural_constants as constants
 import numpy as np
 
 from typing import Dict

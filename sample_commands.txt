@@ -1,0 +1,32 @@
+Takes the unclean data and filters it:
+python bace_driver.py pp bace_data/data -o bace_data/filtered_data --stopwords bace/DistinctCombinedStopWords.csv
+
+Takes the clean data and filters it:
+python bace_driver.py pp bace_data/data_clean -o bace_data/filtered_data_clean --stopwords bace/DistinctCombinedStopWords.csv
+
+Train and test on filtered, uncleaned data with BOW:
+python bace_driver.py bow bace_data/filtered_data/train_texts.csv -t bace_data/filtered_data/test_texts.csv -n 300
+
+Train and test on filtered, cleaned data with BOW:
+python bace_driver.py bow bace_data/filtered_data_clean/train_texts.csv -t bace_data/filtered_data_clean/test_texts.csv -n 300
+
+Train on all filtered, cleaned data and test on all filtered data:
+python bace_driver.py bow bace_data/filtered_data_clean/all_texts.csv -t bace_data/filtered_data/all_texts.csv -n 300
+
+As above, reversed:
+python bace_driver.py bow bace_data/filtered_data/all_texts.csv -t bace_data/filtered_data_clean/all_texts.csv -n 300
+
+Test on a certain filtered, uncleaned file with BOW:
+python bace_driver.py bow bace_data/filtered_data/train_texts.csv -t bace_data/filtered_data/test_texts.csv -s 1 -n 300
+
+Test on a certain filtered, cleaned file with BOW:
+python bace_driver.py bow bace_data/filtered_data_clean/train_texts.csv -t bace_data/filtered_data_clean/test_texts.csv -s 1 -n 300
+
+
+Good n value for bayesian on clean = 300 (got .6)
+Good n value for bayesian on unclean = 400 (got .41)
+
+
+
+NN
+python bace_driver.py nn -i bace_data/data -g glove_embeddings/glove.6B.50d.txt 50 -e .8

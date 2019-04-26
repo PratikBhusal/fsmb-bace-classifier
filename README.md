@@ -5,20 +5,13 @@ project by UTD computer science undergraduate students that will use natural-lan
 techniques to classify documents based on limited training data.
 
 The training and testing data will be in the form of text files that are cleaned as much as possible after being 
-extracted from the PDF documents that the various medical boards provides.
+extracted from the PDF documents that the various medical boards provides via OCR techniques.
 
-**Directories**
+The goal of this project is to, given some input training data, use various techniques to classify new data.
 
->classifiers : subdirectories for the various classifiers
+**Notable Files**
 
->data : holds the subdirectories for training and testing data   
-
->>sexual_misconduct : holds all of the data for sexual misconduct
-
->>training : the training data files
-
->>>sexual_misconduct : 
-
->>testing : the testing data files
-
->>>sexual_misconduct :
+* bace_driver.py : The main driver for the various functionalities, including the preprocessor and the classifiers.
+* bace/ : Modules that bace_driver.py depends upon 
+    * classifiers/ :
+    * preprocessor.py :
