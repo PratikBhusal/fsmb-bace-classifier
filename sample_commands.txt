@@ -37,3 +37,8 @@ python bace_driver.py nn glove_embeddings/glove.6B.50d.txt 50 -i bace_data/nn/da
 
 Test folder
 python bace_driver.py nn glove_embeddings/glove.6B.50d.txt 50 -i bace_data/nn/data_clean -t bace_data/nn_test
+
+Fasttext
+
+Train and test on filtered data
+python3 bace_driver.py ft filtered_data_clean/ -m
