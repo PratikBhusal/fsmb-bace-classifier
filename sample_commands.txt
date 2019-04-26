@@ -16,6 +16,12 @@ python bace_driver.py bow bace_data/filtered_data_clean/all_texts.csv -t bace_da
 As above, reversed:
 python bace_driver.py bow bace_data/filtered_data/all_texts.csv -t bace_data/filtered_data_clean/all_texts.csv -n 300
 
+Test on a certain filtered, uncleaned file with BOW:
+python bace_driver.py bow bace_data/filtered_data/train_texts.csv -t bace_data/filtered_data/test_texts.csv -s 1 -n 300
+
+Test on a certain filtered, cleaned file with BOW:
+python bace_driver.py bow bace_data/filtered_data_clean/train_texts.csv -t bace_data/filtered_data_clean/test_texts.csv -s 1 -n 300
+
 
 Good n value for bayesian on clean = 300 (got .6)
 Good n value for bayesian on unclean = 400 (got .41)
