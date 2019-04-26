@@ -41,14 +41,14 @@ class NeuralClassifier:
                 pickle.dump(self, f)
                 self.labelled_data = temp_l_data
                 self.labelled_validation_data = temp_v_data
-
+                
     def to_pred(self, pred):
         maxi = 0
         for i in range(1, len(pred)):
             if pred[i] > maxi:
                 maxi = i
         return self.labels[maxi]
-
+      
     def to_pred_comparison(self, pred):
         probs = [(self.labels[i], pred[i])for i in range(len(pred))]
         probs.sort(key=lambda x: x[1], reverse=True)
@@ -95,15 +95,15 @@ class NeuralClassifier:
 		"""
 
         has_validation = len(self.labelled_validation_data) > 0
-
         # create the tokenizer
         self.tokenizer = Tokenizer(num_words=max_number_tokens)
         training_data = [text for _, text, _ in self.labelled_data]
         self.tokenizer.fit_on_texts(training_data)
-
         self.label_encoder = LabelEncoder()
         self.label_encoder.fit(self.labels)
 
+        self.label_encoder = LabelEncoder()
+        self.label_encoder.fit(self.labels)
         # now build our training data_clean
         X_train = self.tokenizer.texts_to_sequences(training_data)
 
@@ -124,13 +124,11 @@ class NeuralClassifier:
         self.label_encoder.fit(self.labels)
 
         y_train = np_utils.to_categorical(self.label_encoder.transform(y_train_labels))
-
         if has_validation:
             y_validation = np_utils.to_categorical(self.label_encoder.transform(y_validation_labels))
 
 
         # pad them as necessary
-        X_train = np.array([np.array(x) for x in pad_sequences(X_train, padding="post", maxlen=slice_length)])
         if has_validation:
             X_validation = np.array(pad_sequences(X_validation, padding="post", maxlen=slice_length))
         X_train = pad_sequences(X_train, padding="post", maxlen=slice_length)

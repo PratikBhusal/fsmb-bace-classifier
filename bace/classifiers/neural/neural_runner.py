@@ -110,7 +110,21 @@ def run_nn(args):
                                     slice_length=args.slice_length,
                                     slice_overlap=args.slice_overlap)
                     print(fname, p)
+            X_validate = inputs[num_training+1:]
 
+            for fname in X_train:
+                with open(child_path(dir, fname), encoding="windows-1252") as f:
+                    clf.add_data("{0} {1}".format(name, fname), f.read(), name)
+            for fname in X_validate:
+                with open(child_path(dir, fname), encoding="windows-1252") as f:
+                    clf.add_validation_data("{0} {1}".format(name, fname), f.read(), name)
+
+        clf.train(max_number_tokens=args.num_tokens,
+                  glove_file=args.glove_embedding[0],
+                  glove_dimensions=int(args.glove_embedding[1]),
+                  num_epochs=args.epochs,
+                  batch_size=args.batch_size
+                  )
     else:
         raise Exception("Missing mandatory input arg - this error should be impossible")
 
@@ -174,6 +188,8 @@ def construct_parser_nn(subparser):
         help='percent of the slice that is overlapping with adjacent slices (half on each side)'
     )
     subparser.add_argument(
+
+    subparser.add_argument(
         '-n', '--num_tokens', type=int, default=neural_constants.MAX_NUMBER_TOKENS,
         help='maximum number of tokens, will increase as data increases and number of classes increases'
     )
@@ -185,5 +201,4 @@ def construct_parser_nn(subparser):
         '-b', '--batch_size', type=int, default=neural_constants.MAX_NUMBER_TOKENS,
         help='maximum number of tokens, will increase as data increases and number of classes increases'
     )
-
     subparser.set_defaults(run=run_nn)
