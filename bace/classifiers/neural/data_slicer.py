@@ -1,7 +1,7 @@
 from typing import List
 
 
-def slice_data(X_data: List[List[str]], y_data: List[int], slice_length=100, overlap_percent=0):
+def slice_data(X_data: List[List[str]], y_data: List[int] = None, slice_length=100, overlap_percent=0):
     """
 	:param X_data: a list of lists of symbols
 	:param y_data: a list of classes that corresponds to X_data

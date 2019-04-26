@@ -7,7 +7,7 @@ from os import listdir
 from random import shuffle
 
 def main():
-
+    # no longer functional
     vals = dict()
     minpts = float('inf')
     for name, dir, id in data_constants.TYPES:
