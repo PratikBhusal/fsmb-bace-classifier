@@ -89,4 +89,18 @@ def construct_parser_bow(subparser):
         help="Flag to just show metrics instead of predictions"
     )
 
+    subparser.add_argument(
+        '-s', '--slice', type=int, metavar="i",
+        help="Flag to label slices of the ith document in the test .csv"
+    )
+
     subparser.set_defaults(run=run_bagofwords)
+
+    # if we choose whole documents
+        # for each doc
+            # print :
+                # fileName [most probable class : probability, second most probable class : probability...]
+    # if we choose one doc, sliced
+        # for each slice
+            # print
+                # predict label : the slice
