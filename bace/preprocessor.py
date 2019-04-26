@@ -5,6 +5,7 @@ import numpy as np
 import os
 import pandas as pd
 from argparse import ArgumentTypeError
+
 # Type aliases for filter_texts function
 Token = Text
 Tokens_str = Token
@@ -69,14 +70,15 @@ def get_filtered_file(filename: Text,
     raise ValueError("Invalid File name!")
 
 
-def yield_filtered_files(should_export_extras: bool = False,
-                         input_dir: str = "data_clean",
+# def yield_filtered_files(should_export_extras: bool = False,
+#                          input_dir: str = "data_clean",
+def yield_filtered_files(input_dir: str = "data_clean",
                          output_dir: str = "filtered_data_clean",
                          stop_words: Optional[Container[Text]] = None
                          ) -> Iterable[pd.DataFrame]:
-    filtered_folder = os.path.abspath(output_dir)
-    if should_export_extras and not os.path.exists(filtered_folder):
-        os.makedirs(filtered_folder)
+    # filtered_folder = os.path.abspath(output_dir)
+    # if should_export_extras and not os.path.exists(filtered_folder):
+    #     os.makedirs(filtered_folder)
 
     for folder_path in iglob(os.path.join(os.path.abspath(input_dir), "*")):
         valid_file_data: Dict[Text, Tokens_str] = {
@@ -90,7 +92,6 @@ def yield_filtered_files(should_export_extras: bool = False,
         if valid_file_data:
             folder_name = os.path.basename(folder_path)
 
-            # base_names = [os.path.basename(name) for name in valid_file_data]
             texts_df = pd.DataFrame({
                 "filename": list(
                     os.path.basename(name) for name in valid_file_data.keys()
@@ -99,29 +100,28 @@ def yield_filtered_files(should_export_extras: bool = False,
                 "tokens": list(valid_file_data.values())
             })
 
+            # if should_export_extras:
+            #     export_folder = os.path.join(filtered_folder, folder_name)
 
-            if should_export_extras:
-                export_folder = os.path.join(filtered_folder, folder_name)
+            #     if not os.path.exists(export_folder):
+            #         os.makedirs(export_folder)
 
-                if not os.path.exists(export_folder):
-                    os.makedirs(export_folder)
-
-                texts_df.to_csv(
-                    os.path.join(export_folder, "texts.csv"), index=False,
-                    columns=["filename", "tokens"]
-                )
+            #     texts_df.to_csv(
+            #         os.path.join(export_folder, "texts.csv"), index=False,
+            #         columns=["filename", "tokens"]
+            #     )
 
             yield texts_df
 
 
-def split_dataset(should_export_extras: bool = False,
+def split_dataset(export: str = "all",
                   split_percent: float = 0.8,
                   input_dir: str = "data",
                   output_dir: str = "filtered_data_clean",
                   stopwords_file_path: Optional[str] = None
                   ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-    if should_export_extras:
+    if export == "single" or export == "all":
         full_arr: List[Tuple[str, str, str]] = []
 
     train_arr: List[Tuple[str, str, str]] = []
@@ -132,31 +132,33 @@ def split_dataset(should_export_extras: bool = False,
         with open(stopwords_file_path, "r") as fsmb_stop_words:
             stop_words.update(fsmb_stop_words.read().splitlines())
 
-    for df in yield_filtered_files(should_export_extras=should_export_extras,
-                                   input_dir=input_dir, output_dir=output_dir,
+    for df in yield_filtered_files(input_dir=input_dir,
+                                   output_dir=output_dir,
                                    stop_words=stop_words):
-        if should_export_extras:
+
+        if export == "single" or export == "all":
             full_arr.extend(df.values)
 
         sample_train = df.sample(frac=split_percent)
-
         train_arr.extend(sample_train.values)
         test_arr.extend(df.drop(sample_train.index).values)
+
+    filtered_folder = os.path.abspath(output_dir)
+
+    if not os.path.exists(filtered_folder):
+        os.makedirs(filtered_folder)
 
     train_df = pd.DataFrame(train_arr,
                             columns=["filename", "label", "tokens"])
     test_df = pd.DataFrame(test_arr,
                            columns=["filename", "label", "tokens"])
 
-    filtered_folder = os.path.abspath(output_dir)
-    if should_export_extras:
-        if not os.path.exists(filtered_folder):
-            os.makedirs(filtered_folder)
-
+    if export == "single" or export == "all":
         pd.DataFrame(full_arr, columns=["filename", "label", "tokens"]).to_csv(
             os.path.join(filtered_folder, "all_texts.csv"),
             index=False
         )
+    if export == "split" or export == "all":
         train_df.to_csv(os.path.join(filtered_folder, "train_texts.csv"),
                         index=False
                         )
@@ -205,6 +207,7 @@ def export_fasttext_data(df: pd.DataFrame, output_name: str,
             fmt="%s"
         )
 
+
 def construct_parser_preprocessor(subparser):
     def within_percent_interval(interval_str: str) -> float:
         interval = float(interval_str)
@@ -227,12 +230,12 @@ def construct_parser_preprocessor(subparser):
     """
 
     subparser.add_argument(
-        'inputdir', type=str, default="data_clean", metavar="input-dir",
+        'input_dir', type=str, default="data_clean", metavar="input-dir",
         help='Input directory to preprocess'
     )
 
     subparser.add_argument(
-        '-o', '--outputdir', type=str, default="filtered_data",
+        '-o', '--output-dir', type=str, default="filtered_data_clean",
         help='Output directory to hold preprocessed data_clean'
     )
 
@@ -246,15 +249,22 @@ def construct_parser_preprocessor(subparser):
     # appear.
     subparser.add_argument(
         '--export', type=str, default="single",
-        choices=["single", "split", "both"],
-        help='Indicate whether you only want a single file holding all of the \
-        preprocessed data_clean, or both. If "split\" or "both" were chosen, the \
-        split is based on "--train-split" or "--test-split" or have the train \
-        split be 80%% of the raw data_clean if neither argument was given.'
+        choices=["single", "split", "fasttext", "all"],
+        help='Indicate whether you only want a single file holding all of the '
+        'preprocessed data_clean, or both. If "split\" was chosen, it '
+        'utilizes the "--train-split" argument to know how big to make the '
+        'training and testing sets. If fasttext is given, it utilizes the '
+        '"--slice-length" argument to know how big to make each slice'
     )
 
     subparser.add_argument(
-        '--train-split', type=within_percent_interval, default=.8, metavar="[0-1]",
+        '--slice_length', type=int, default=25,
+        help="Number of tokens to have per slice of a file."
+    )
+
+    subparser.add_argument(
+        '--train-split', type=within_percent_interval, default=.8,
+        metavar="[0-1]",
         help="Percentage in interval [0,1] of total data_clean going to the \
         training dataset."
     )
@@ -264,16 +274,30 @@ def construct_parser_preprocessor(subparser):
 
 def run_preprocessor(args):
     train_df, test_df = split_dataset(
-        should_export_extras=True,
+        export=args.export,
         split_percent=args.train_split,
-        input_dir=args.inputdir,
-        output_dir=args.outputdir,
+        input_dir=args.input_dir,
+        output_dir=args.output_dir,
         stopwords_file_path=args.stopwords
     )
 
+    if args.export == "fasttext" or args.export == "all":
+        train_slice_name = os.path.join(
+            os.getcwd(), args.output_dir, "fasttext_train.txt"
+        )
+        test_slice_name = os.path.join(
+            os.getcwd(), args.output_dir, "fasttext_test.txt"
+        )
+        export_fasttext_data(
+            train_df, train_slice_name, slice_length=args.slice_length
+        )
+        export_fasttext_data(
+            test_df, test_slice_name, slice_length=args.slice_length
+        )
+
+
 def main():
-    train_df, test_df = split_dataset(should_export_extras=True,
-                                      split_percent=0.8)
+    train_df, test_df = split_dataset()
 
     train_slice_name = os.path.join(os.getcwd(), "filtered_data_clean",
                                     "fasttext_train.txt")
