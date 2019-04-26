@@ -1,9 +1,10 @@
 import pandas as pd
 from typing import List, Text, Tuple
+from sklearn import preprocessing
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from sklearn.naive_bayes import GaussianNB
 from sklearn.feature_extraction.text import CountVectorizer
-# from bace.classifiers.classifier import Classifier
+#from bace.classifiers.classifier import Classifier
 from os.path import join as path_join
 import argparse
 
@@ -21,7 +22,7 @@ def get_classifier(train_labels: List[Text], train_data: List[Text], num_feature
 
 
 def predict(classifier: GaussianNB, test_data:List[Text], num: int = 200):
-    return classifier.predict(CountVectorizer(max_features = num).fit_transform(test_data).toarray())
+    return classifier.predict_proba(CountVectorizer(max_features=num).fit_transform(test_data).toarray())
 
 
 def show_metrics(test_labels: List[Text], class_prediction: List[Text]):
@@ -35,6 +36,8 @@ def run_bagofwords(args):
     train_fnames, train_labels, train_tokens = read_data(args.training_file)
     test_fnames, test_labels, test_tokens = read_data(args.test_file)
 
+    le = preprocessing.LabelEncoder().fit(train_labels)
+
     clf = get_classifier(train_labels, train_tokens, args.num_features)
 
     predictions = predict(clf, test_tokens, num=args.num_features)
@@ -43,12 +46,10 @@ def run_bagofwords(args):
         show_metrics(test_labels, predictions)
     else:
         for i in range(len(predictions)):
-            print(test_fnames[i],
-                  test_labels[i],
-                  predictions[i],
-                  test_labels[i] == predictions[i]
-                  #train_tokens[i]
-                  )
+            print(test_fnames[i],end=' ')
+            for j in range(len(predictions[i])):
+                print(le.classes_[j] + ": " + str(predictions[i][j]),end = ' ')
+            print()
 
 def construct_parser_bow(subparser):
     """
@@ -89,17 +90,13 @@ def construct_parser_bow(subparser):
         help="Flag to just show metrics instead of predictions"
     )
 
-    subparser.add_argument(
-        '-s', '--slice', type=int, metavar="i",
-        help="Flag to label slices of the ith document in the test .csv"
-    )
-
     subparser.set_defaults(run=run_bagofwords)
 
     # if we choose whole documents
         # for each doc
             # print :
                 # fileName [most probable class : probability, second most probable class : probability...]
+
     # if we choose one doc, sliced
         # for each slice
             # print
