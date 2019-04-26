@@ -54,6 +54,7 @@ def run_bagofwords(args):
             print(predict_file[i], ":")
             print(slices[i])
     elif args.metrics:
+        predictions = predict_single(clf, test_tokens, num=args.num_features)
         show_metrics(test_labels, predictions)
     else:
         for i in range(len(predictions)):
