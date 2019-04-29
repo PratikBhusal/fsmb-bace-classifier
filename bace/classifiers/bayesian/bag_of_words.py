@@ -8,7 +8,20 @@ from sklearn.feature_extraction.text import CountVectorizer
 from os.path import join as path_join
 import argparse
 
-def read_data(filename: Text) -> Tuple[List[Text], List[Text]]:
+def read_data(filename: Text) -> Tuple[List[Text], List[Text], List[Text]]:
+    """
+    reads the text file and extract the columns from the .csv file
+
+    Parameters
+    ----------
+    filename: Text
+        .csv file containing filenames, class, and tokens for each file
+
+    Returns
+    -------
+    Tuple[List[Text], List[Text], List[Text]]
+        returns the list of the filenames, class labels, and tokens in three separate lists
+    """
     dataset = pd.read_csv(filename)
     return dataset['filename'].tolist(),\
            dataset['label'].tolist(), \
@@ -16,23 +29,107 @@ def read_data(filename: Text) -> Tuple[List[Text], List[Text]]:
 
 
 def get_classifier(train_labels: List[Text], train_data: List[Text], num_features: int = 200):
+    """
+    trains the bag of words model based on the training labels and the training data, with a given number of features
+
+    Parameters
+    ----------
+    train_labels: List[Text]
+        List of the class labels for the training set
+        
+    train_data: List[Text]
+        List of the tokens for the training set
+        
+    num_features: int
+         number of most frequent tokens to store in model
+         (Default value = 200)
+
+    Returns
+    -------
+    classifier: GaussianNB
+        model that fits Gaussian Naive Bayes according to Bag of Words
+    """
     classifier = GaussianNB()
     classifier.fit(CountVectorizer(max_features = num_features).fit_transform(train_data).toarray(),train_labels)
     return classifier
 
 
 def predict(classifier: GaussianNB, test_data:List[Text], num: int = 200):
+    """
+    predicts the class label probabilities for the test set based on the test tokens and given number of features
+
+    Parameters
+    ----------
+    classifier: GaussianNB
+        model that holds the bag of words model
+        
+    test_data: List[Text]
+        list of the tokens for the test set
+        
+    num: int
+        number of most frequent tokens to store in model
+        (Default value = 200)
+
+    Returns
+    -------
+    array-like
+        Returns probabilities for each class in the model
+    """
     return classifier.predict_proba(CountVectorizer(max_features=num).fit_transform(test_data).toarray())
 
 def predict_single(classifier: GaussianNB, test_data:List[Text], num: int = 200):
+    """
+    predicts the most probable class value for the given test tokens and model
+
+    Parameters
+    ----------
+    classifier: GaussianNB
+        model that holds the bag of words model
+        
+    test_data: List[Text]
+        list of the tokens for the test set
+        
+    num: int
+        number of most frequent tokens to store in model
+        (Default value = 200)
+
+    Returns
+    -------
+    array
+        Predicted target values for each file
+    """
     return classifier.predict(CountVectorizer(max_features=num).fit_transform(test_data).toarray())
 
 def show_metrics(test_labels: List[Text], class_prediction: List[Text]):
+    """
+    prints the statistics for the prediction results
+    confusion_matrix:       n x n array
+                            number value on the diagonal: (0,0), (1,1) ... (n,n): number of correct classifications
+                            else: number of incorrect classifications
+    classification_report:  report on several statistics
+    accuracy_score:         decimal on how much is correct
+
+    Parameters
+    ----------
+    test_labels: List[Text]
+        List of the labeled class labels for the test set
+        
+    class_prediction: List[Text]
+        List of the predicted class labels for the test set
+    """
     print(confusion_matrix(test_labels,class_prediction))
     print(classification_report(test_labels,class_prediction))
     print("Accuracy:", accuracy_score(test_labels,class_prediction))
 
 def run_bagofwords(args):
+    """
+    parser the subparser and runs the bag of words based on the arguments given
+
+    Parameters
+    ----------
+    args
+        variable length argument list
+    """
     train_fnames, train_labels, train_tokens = read_data(args.training_file)
     test_fnames, test_labels, test_tokens = read_data(args.test_file)
 
@@ -63,7 +160,16 @@ def run_bagofwords(args):
 
 def construct_parser_bow(subparser):
     """
-    if subparser:
+    Construct Bag of Words subparser
+
+    Parameters
+    ----------
+    subparser
+        parser to hold the flags for the bag of words
+    """
+
+    """
+        if subparser:
         bow_parser = subparser.add_parser(
             "bow",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
