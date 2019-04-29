@@ -184,7 +184,6 @@ class NeuralClassifier:
                            verbose=False,
                            shuffle=True,
                            batch_size=batch_size)
-
         if diagnostic_printing and has_validation:
             def cm(true, pred):
                 m = confusion_matrix(true, pred)
