@@ -26,8 +26,6 @@ python bace_driver.py bow bace_data/filtered_data_clean/train_texts.csv -t bace_
 Good n value for bayesian on clean = 300 (got .6)
 Good n value for bayesian on unclean = 400 (got .41)
 
-
-
 NN
 Evaluator
 python bace_driver.py nn glove_embeddings/glove.6B.50d.txt 50 -i bace_data/data_clean -e .8
@@ -35,11 +33,11 @@ python bace_driver.py nn glove_embeddings/glove.6B.50d.txt 50 -i bace_data/data_
 Slicer
 python bace_driver.py nn glove_embeddings/glove.6B.50d.txt 50 -i bace_data/nn/data_clean -s bace_data/nn_test/CS_3018927_DONE.txt --slice_length 50 --slice_overlap .2
 
-Test folder
-python bace_driver.py nn glove_embeddings/glove.6B.50d.txt 50 -i bace_data/nn/data_clean -t bace_data/nn_test
+Test on selections in a folder
+python bace_driver.py nn glove_embeddings/glove.6B.50d.txt 50 -i bace_data/nn/data_clean -t bace_data/nn_test]
 
 
 Fasttext
 
 Train and test on filtered data
-python3 bace_driver.py ft filtered_data_clean/ -m
+python3 bace_driver.py ft filtered_data_clean/ -m]

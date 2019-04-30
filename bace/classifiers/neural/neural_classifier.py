@@ -18,8 +18,14 @@ from typing import Dict
 import pickle
 
 class NeuralClassifier:
+    """
+
+    """
 
     def __init__(self):
+        """Initializes a neural classifier's attributes
+
+        """
         # a list of tuples of (type, data_clean, true_label)
         self.labelled_data = []
         self.labelled_validation_data = []
@@ -30,6 +36,15 @@ class NeuralClassifier:
     #force
 
     def pickle(self, fname, keep_data=False):
+        """Pickles this classifier
+
+        Parameters
+        ----------
+        fname : a file name
+        keep_data : if test/validation data should be kept (will increase size of file)
+
+
+        """
         with open(fname, 'w') as f:
             if keep_data:
                 pickle.dump(self, f)
@@ -43,6 +58,19 @@ class NeuralClassifier:
                 self.labelled_validation_data = temp_v_data
                 
     def to_pred(self, pred):
+        """
+
+        Parameters
+        ----------
+        pred : array_like
+            A real vector st len(pred) == len(self.labels)
+
+        Returns
+        -------
+        str
+            The label string at the index of the first maximal value of pred
+
+        """
         maxi = 0
         for i in range(1, len(pred)):
             if pred[i] > maxi:
@@ -50,32 +78,53 @@ class NeuralClassifier:
         return self.labels[maxi]
       
     def to_pred_comparison(self, pred):
+        """
+
+        Parameters
+        ----------
+        pred : array_like
+            A real vector st len(pred) == len(self.labels)
+
+        Returns
+        -------
+        array_like
+            An array of tuples of (labels, prediction_prob) for each value in pred,
+            in descending order by probability
+
+        """
         probs = [(self.labels[i], pred[i])for i in range(len(pred))]
         probs.sort(key=lambda x: x[1], reverse=True)
         return probs
 
-    def add_data(self, file_id : str, tokenized_file : str, true_label : int):
-        """
+    def add_data(self, file_id : str, data : str, true_label):
+        """Adds the given data point to this model's data
 
-		:param file_id: a hashable ID for this particular file
-		:param tokenized_file: a
-		:param true_label:
-		:return: None
-		"""
+        Parameters
+        ----------
+        file_id : str
+            an id for the the file this data point is drawn from
+        data : str
+        true_label
+            The true label for this daa point
+
+        """
 
         # CURRENTLY NOT TAKING IN PRE-TOKENIZED FILE, DISCUSS WITH TEAM ABOUT ALTERING CLASSIFIER INTERFACE
         if true_label not in self.labels:
             self.labels.append(true_label)
-        self.labelled_data.append((file_id, tokenized_file, true_label))
+        self.labelled_data.append((file_id, data, true_label))
 
     def add_validation_data(self, file_id : str, data : str, true_label : int):
-        """
+        """Adds the given data point to this model's validation data
 
-		:param file_id:
-		:param data:
-		:param true_label:
-		:return:
-		"""
+        Parameters
+        ----------
+        file_id : str
+            an id for the the file this data point is drawn from
+        data : str
+        true_label
+            The true label for this daa point
+        """
         if true_label not in self.labels:
             self.labels.append(true_label)
         self.labelled_validation_data.append((file_id, data, true_label))
@@ -90,9 +139,33 @@ class NeuralClassifier:
               num_epochs=10,
               batch_size=5):
         """
-		This classifier object will train on all the data_clean that has been added to it using the adddata method
-		:return:
-		"""
+
+        Parameters
+        ----------
+        max_number_tokens : int, optional
+            The maximum number of distinct tokens allowed by the tokenizer.
+            With more data, this value should increase
+        slice_length : int, optional
+            The length of the subslices sent that are sent through the model.
+            With more data, this value should increase
+            This value should probably not be greater than half the length of a typical document
+        slice_overlap : float, optional
+            The percent of each slice that is overlapped with its neigbors
+            This value should be in the range [0,1), but probably not above .2
+        glove_file : str, optional
+            The .txt file containing the glove embeddings to use for this classifier
+        glove_dimensions : str, optional
+            The number of dimensions of the given glove_file
+        diagnostic_printing : bool, optional
+            True to run output some statistics on all validation data
+        num_epochs : int, optional
+            The number of epochs to train the model for.
+            Determined experimentally
+        batch_size : int, optional
+            The batch size to use when training the model
+            Determined experimentally
+
+        """
 
         has_validation = len(self.labelled_validation_data) > 0
         # create the tokenizer
@@ -143,6 +216,7 @@ class NeuralClassifier:
 
         # set model parameters
         self.model = Sequential()
+
         model_layers = [
             # must have these two layers firsts
             layers.Embedding(vocab_size,
@@ -151,10 +225,14 @@ class NeuralClassifier:
                              input_length=slice_length,
                              trainable=False),
             # now we have some options
+
+            # as more data becomes available, a more optimal sequence of inner layers
+            # may be discoverable
             layers.GlobalMaxPool1D(),
             layers.Dense(45, activation="relu"),
             layers.Dense(20, activation="sigmoid"),
-            # probably want a final sigmoid layer to get smooth value in range (0, 1)
+
+            # final layer for the output probability distribution
             layers.Dense(len(self.labels), activation="softmax")
         ]
         # add them in
@@ -213,7 +291,26 @@ class NeuralClassifier:
     def predict(self, str,
                       slice_length=neural_constants.SLICE_LENGTH,
                       slice_overlap=neural_constants.SLICE_OVERLAP):
+        """
 
+        Parameters
+        ----------
+        str : str
+            a string of text to predict
+        slice_length : int, optional
+            the slice length to use. Should match the model's slice length
+        slice_overlap : float, optional
+            The percent of each slice that is overlapped with its neigbors
+            This value should be in the range [0,1), but probably not above .2
+
+        Returns
+        -------
+        distribution: array_like
+            The probability distribution s.t. distribution[i] == P(label of str == self.labels[i])
+            Where len(distribution) == len(self.labels)
+            And sum(distribution) == 1
+            And for all i distribution[i] >= 0
+        """
         tokenized = self.tokenizer.texts_to_sequences([str])
         slices, _ = data_slicer.slice_data(tokenized,
                                            None,
@@ -233,6 +330,26 @@ class NeuralClassifier:
     def slice_and_predict(self, str,
                           slice_length=neural_constants.SLICE_LENGTH,
                           slice_overlap=neural_constants.SLICE_OVERLAP):
+        """Slices and predicts the input string for each slice
+
+        Parameters
+        ----------
+        str : str
+            a string of text to predict
+        slice_length : int, optional
+            the slice length to use. Should match the model's slice length
+        slice_overlap : float, optional
+            The percent of each slice that is overlapped with its neigbors
+            This value should be in the range [0,1), but probably not above .2
+
+        Returns
+        -------
+        distribution: array_like
+            The probability distribution s.t. distribution[i] == P(label of str == self.labels[i])
+            Where len(distribution) == len(self.labels)
+            And sum(distribution) == 1
+            And for all i distribution[i] >= 0
+        """
         tokenized = self.tokenizer.texts_to_sequences([str])
         slices, _ = data_slicer.slice_data(tokenized,
                                         None,

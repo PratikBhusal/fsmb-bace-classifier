@@ -6,7 +6,26 @@ import argparse
 
 
 def construct_primary_parser():
+    """Constructs and returns the argparse object used in main
+
+    Returns
+    -------
+    ArgumentParser
+        An argument parser with subparsers for various tasks,
+        where each task has a run property that is the run function
+        for its specific task
+
+    """
     def subparser_constructors():
+        """Generator for the subparsers for the various task
+
+        Yields
+        ------
+        task_name : str
+        task_constructor : function
+            The function that constructs the superparser for the task
+
+        """
         yield 'pp', construct_parser_preprocessor
         yield 'ft', construct_parser_fasttext
         yield 'bow', construct_parser_bow
@@ -29,6 +48,9 @@ def construct_primary_parser():
     return parser
 
 def main():
+    """Constructs and parses the arg parser, then runs the relevant command
+
+    """
     args = construct_primary_parser().parse_args()
     #print(args)
     args.run(args)
