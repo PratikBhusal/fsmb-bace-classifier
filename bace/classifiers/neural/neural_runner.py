@@ -1,15 +1,22 @@
 import bace.classifiers.neural.neural_constants as neural_constants
 
 
-from os import listdir
-
-import pickle
-from argparse import ArgumentError
-from random import shuffle
 
 def run_nn(args):
-    # import here bc tf import is heavy
+    """A function used to run the neural classifier based on the args
+
+    Parameters
+    ----------
+    args : Namespace
+        A namespace from an argparser using construct_parser_nn
+
+    """
+    # import here bc some imports are heavy
     import bace.classifiers.neural.neural_classifier as nc
+    from os import listdir
+    import pickle
+    from argparse import ArgumentError
+    from random import shuffle
 
     def child_path(dir, fname):
         return dir + '/' + fname
@@ -135,6 +142,15 @@ def run_nn(args):
 
 
 def construct_parser_nn(subparser):
+    """Adds the arguments necessary for run_nn to the give parser, and adds a functional reference to
+        run_nn as the run argument as the value of the run attribute of the parser
+
+    Parameters
+    ----------
+    subparser
+        An argparse object that supports arguments, mutually exclusion, and defaults
+
+    """
     subparser.add_argument(
         'glove_embedding', type=str,
         metavar='glove_file',

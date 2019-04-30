@@ -7,6 +7,9 @@ from os import listdir
 from random import shuffle
 
 def main():
+    """Old tester, no longer functional
+
+    """
     # no longer functional
     vals = dict()
     minpts = float('inf')
