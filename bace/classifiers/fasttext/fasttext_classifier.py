@@ -4,53 +4,101 @@ from os.path import exists as path_exists
 from os import makedirs as make_dirs
 # from fasttext import supervised, train_supervised
 import fasttext as ft
+from typing import List, Iterator
+
+
+def fancy_prediction(classifier, input_str: str) -> str:
+    predictions = classifier.predict_proba(
+        [input_str], k=len(classifier.labels)
+    )
+    longest_label_len = max(map(len, classifier.labels))
+    predict_str = ""
+    for curr_string_prediction in predictions:
+        for label, prob in curr_string_prediction:
+            predict_str += f"{str(label).ljust(longest_label_len)}: {prob}"
+            predict_str += '\n'
+    predict_str += "Text:\n"
+    # tokens = input_str.split()
+    # if len(tokens) > 21:
+    #     predict_str += ' '.join(tokens[:10]) + " ... " + ' '.join(tokens[-10:])
+    # else:
+    predict_str += input_str
+    return predict_str
+
+
+def fancy_predictions(classifier,
+                      file_names: List[str],
+                      input_strs: List[str]) -> Iterator[str]:
+    for i, input_str in enumerate(input_strs):
+        predict_str = file_names[i] + ":\n"
+        predict_str += fancy_prediction(classifier, input_str) + "\n"
+        yield predict_str
 
 
 def run_fasttext(args):
-    def fancy_print_predictions(classifier, input_str: str, k: int):
-        predictions = classifier.predict_proba(
-            [input_str], k=k
-        )
-        for curr_string_prediction in predictions:
-            for label, prob in curr_string_prediction:
-                print(label, ": ", prob, sep='')
+    if not path_exists(abs_path(args.train_file)):
+        raise ValueError("Invalid input train file path given!")
+    elif args.test_file and not path_exists(abs_path(args.test_file)):
+        raise ValueError("Invalid input test file path given!")
+    elif args.predict_test_split and not args.test_file:
+        raise ValueError("Cannot predict on test_file without specifying its \
+                         path!")
 
-    # print(args)
+    train_file_name = abs_path(args.train_file)
+    classifier = ft.supervised(train_file_name, args.input_binary)
 
-    train_file_name = abs_path(
-        path_join(args.input_dir, args.train_file)
-    )
-    test_file_name = abs_path(
-        path_join(args.input_dir, args.test_file)
-    )
-
-    classifier = ft.supervised(train_file_name, args.binary_file)
-    results = classifier.test(test_file_name)
-
+    output_file = None
     if args.metrics:
-        print("Number of test slices:", results.nexamples)
-        print("Precision:", results.precision)
-        print("Recall:", results.recall)
-        # print()
-        # fancy_print_predictions(
-        #     classifier,
-        #     "robbed",
-        #     len(classifier.labels)
-        # )
+        from sys import stdout
+        output_file = stdout
     else:
         if not path_exists(abs_path(args.output_dir)):
             make_dirs(abs_path(args.output_dir))
+        output_file = open(
+            abs_path(path_join(args.output_dir, args.metrics_file)), "w"
+        )
 
-        with open(
-            abs_path(path_join(args.output_dir, args.metrics_file)),
-            "w"
-        ) as f:
-            f.write(f"Number of test slices: {results.nexamples}\n")
-            f.write(f"Precision: {results.precision}\n")
-            f.write(f"Recall: {results.recall}\n")
+    if args.test_file:
+        test_file_name = abs_path(args.test_file)
+        results = classifier.test(test_file_name)
+        print("Number of test slices:", results.nexamples, file=output_file)
+        print("Precision:", results.precision, file=output_file)
+        print("Recall:", results.recall, file=output_file)
+        print(file=output_file)
+
+    if args.predict_strip or args.predict_test_split or args.predict_test_texts:
+        print("Prediction results:\n", file=output_file)
+
+    if args.predict_strip:
+        print(fancy_prediction(classifier, args.predict_strip),
+              file=output_file)
+    elif args.predict_test_split and args.test_file:
+        with open(test_file_name) as f:
+            for line in f.read().splitlines():
+                print(
+                    fancy_prediction(
+                        classifier,
+                        ' '.join(line.split()[1:])
+                    ), '\n',
+                    sep='',
+                    file=output_file
+                )
+    elif args.predict_test_texts:
+        with open(args.predict_test_texts) as f:
+            for line in f.read().splitlines()[1:]:
+                filename, label, tokens = line.split(',')
+                print(filename, ':', sep='', file=output_file)
+                print(fancy_prediction(classifier, tokens), '\n', sep='',
+                      file=output_file
+                      )
 
 
 def construct_parser_fasttext(subparser):
+    """
+    Construct Fasttext Parser
+
+    """
+
     """
     if subparser:
         fasttext_parser = subparser.add_parser(
@@ -64,29 +112,25 @@ def construct_parser_fasttext(subparser):
             formatter_class=argparse.ArgumentDefaultsHelpFormatter
         )
     """
-
     subparser.add_argument(
-        'input_dir', type=str, default="data_clean", metavar="input-dir",
-        help='Input directory to preprocessed data'
+        'train_file', type=str, default="fasttext_train.txt",
+        help='Path to training file'
+    )
+    subparser.add_argument(
+        '-b', '--input_binary', type=str, default="model",
+        help='Name of fasttext model binary that will be generated.'
+    )
+    subparser.add_argument(
+        '--test-file', type=str,
+        help='Path to testing file. The default name generated by the \
+        preprocessor for this file is "fasttext_test.txt"'
     )
     subparser.add_argument(
         '-o', '--output-dir', type=str, default="results",
         help='Output directory to hold fasttext classifier output files'
     )
-    subparser.add_argument(
-        '--train_file', type=str, default="fasttext_train.txt",
-        help='Name of training file found in "--input-dir"'
-    )
-    subparser.add_argument(
-        '--test_file', type=str, default="fasttext_test.txt",
-        help='Name of testing file found in "--input-dir"'
-    )
-    subparser.add_argument(
-        '-b', '--binary_file', type=str, default="model",
-        help='Name of fasttext model binary that will be generated.'
-    )
 
-    # Make results showing options mutually exclusive
+    # Make results showing options are mutually exclusive
     fasttext_results = subparser.add_mutually_exclusive_group()
     fasttext_results.add_argument(
         '-m', '--metrics', action="store_true", default=False,
@@ -95,6 +139,23 @@ def construct_parser_fasttext(subparser):
     fasttext_results.add_argument(
         '--metrics-file', type=str, default="fasttext_metrics.txt",
         help='Filename to store fasttext metrics'
+    )
+
+    # Make results prediction options are mutually exclusive
+    fasttext_predictions = subparser.add_mutually_exclusive_group()
+    fasttext_predictions.add_argument(
+        '--predict-test-split', action="store_true", default=False,
+        help='Flag to indicate that you want to predict the splits in the \
+        test_file given via the "--test_file" argument'
+    )
+    fasttext_predictions.add_argument(
+        '--predict-test-texts', type=str,
+        help='Path of the test_texts.csv generated by the \
+        preprocessor when using the "--export split" option (default returned \
+        file from pp --export split is "test_texts.csv")'
+    )
+    fasttext_predictions.add_argument(
+        '--predict-strip', type=str, help='String to predict upon'
     )
 
     subparser.set_defaults(run=run_fasttext)
