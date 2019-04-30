@@ -14,6 +14,21 @@ Tokens = List[Token]
 
 def filter_tokens(tokens: Iterable[Text],
                   stop_words: Optional[Container[Text]]) -> Tokens_str:
+    """
+    Filter out unnecessary tokens from given list of tokens.
+
+    Parameters
+    ----------
+    tokens: Iterable[Text]
+        The list of tokens to filter
+    stop_words: Optional[Container[Text]] :
+        If given, the set of stopwords to filter out form the tokens list.
+    Returns
+    -------
+    Tokens_str
+        The string version of all the tokens seperated by a single space.
+
+    """
     from re import compile as regex
     from string import printable as printable_chars
 
@@ -23,8 +38,45 @@ def filter_tokens(tokens: Iterable[Text],
     enum_filter = regex(r"^\(?\w+([,.]\)?|[,.\)])")
 
     def yield_filtered_tokens(tokens: Iterable[Token]) -> Iterable[Token]:
+        """
+        Yield all the filtered versions of the given tokens
+
+        Parameters
+        ----------
+        tokens: Iterable[Token]
+            The list of tokens to filter
+        Yields
+        ------
+        Token
+            The next filtered token in the tokens list
+
+        """
         def filter_token(token: Text) -> Text:
+            """
+            Filter the given token
+
+            Parameters
+            ----------
+            token: Text
+                The token we want to filter
+            Returns
+            -------
+            Token
+                The filtered version of the current token
+            """
             def strip_enum(token: Text) -> Text:
+                """
+                Remove any enumerations from the given token
+
+                Parameters
+                ----------
+                token: Text :
+                    The token that we want to remove any enumerations from
+                Returns
+                -------
+                    A filtered version of the token that does not have any
+                    enumerations.
+                """
                 if not token:
                     return ''
                 if token[0] == '(' and token[len(token) - 1] != ')':
@@ -60,6 +112,24 @@ def filter_tokens(tokens: Iterable[Text],
 def get_filtered_file(filename: Text,
                       stop_words: Optional[Container[Text]] = None
                       ) -> Tokens_str:
+    """
+    Get the filtered version of a single file.
+
+    Parameters
+    ----------
+    filename: Text
+        The name of the file we are reading from
+
+    stop_words: Optional[Container[Text]] :
+        Path of file consisting of extra stopwords to consider
+        (Default value = None)
+
+    Returns
+    -------
+    Tokens_str
+        The string version of all the valid tokens in the file.
+
+    """
     from re import compile as regex
 
     ws_filter = regex(r"\s+")
@@ -73,9 +143,30 @@ def get_filtered_file(filename: Text,
 # def yield_filtered_files(should_export_extras: bool = False,
 #                          input_dir: str = "data_clean",
 def yield_filtered_files(input_dir: str = "data_clean",
-                         output_dir: str = "filtered_data_clean",
                          stop_words: Optional[Container[Text]] = None
                          ) -> Iterable[pd.DataFrame]:
+    """
+    Yield the filtered version of all files corresponding to a specific label.
+
+    Parameters
+    ----------
+    input_dir: str :
+         The directory of where to find the folders that store the different
+         folders filled with input data(Default value = "data_clean")
+    stop_words: Optional[Container[Text]] :
+        Path of file consisting of extra stopwords to consider
+        (Default value = None)
+
+    Yields
+    ------
+    pd.DataFrame
+        A pandas DataFrame for the current label we have finished filtering.
+
+    """
+
+    # Note: output_dir should be the directory of where to store the individual
+    # groupings of a single label's DataFrame file.
+
     # filtered_folder = os.path.abspath(output_dir)
     # if should_export_extras and not os.path.exists(filtered_folder):
     #     os.makedirs(filtered_folder)
@@ -120,6 +211,45 @@ def split_dataset(export: str = "all",
                   output_dir: str = "filtered_data_clean",
                   stopwords_file_path: Optional[str] = None
                   ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Filter and split all of the input data into a train split and a test split.
+
+    Parameters
+    ----------
+    export: str :
+        Flag to indicate which export mode to do. If "single" is chosen, only
+        export a single csv file that holds the filtered texts of all files
+        found in the input_dir. If "split" is chosen, only export the train set
+        and test set into seperate csv files. If "all" is chosen, export all of
+        the above.
+        (Default value = "all")
+    split_percent: float :
+        The percent of the input data set that will go to the training set.
+         (Default value = 0.8)
+    input_dir: str :
+        The directory that holds all of the data. Folder structure should be in
+        the following form:
+            data/
+                label1/
+                    data1.txt
+                    data2.txt
+                label2/
+                    data3.txt
+                    data4.txt
+         (Default value = "data")
+    output_dir: str :
+        The directory that will hold the exported files.
+         (Default value = "filtered_data_clean")
+    stopwords_file_path: Optional[str] :
+        Path of file consisting of extra stopwords to consider
+        (Default value = None)
+
+    Returns
+    -------
+    Tuple[pd.DataFrame, pd.DataFrame]
+        A tuple where the first item is a pandas DataFrame of the training set
+        and the second item is a pandas DataFrame of the test set.
+    """
 
     if export == "single" or export == "all":
         full_arr: List[Tuple[str, str, str]] = []
@@ -133,7 +263,6 @@ def split_dataset(export: str = "all",
             stop_words.update(fsmb_stop_words.read().splitlines())
 
     for df in yield_filtered_files(input_dir=input_dir,
-                                   output_dir=output_dir,
                                    stop_words=stop_words):
 
         if export == "single" or export == "all":
@@ -172,6 +301,26 @@ def split_dataset(export: str = "all",
 def get_slices(all_texts_df: pd.DataFrame,
                slice_length: int = 25,
                overlap_percent: float = 0) -> pd.DataFrame:
+    """
+    Split the given pandas DataFrame into many slices.
+
+    Parameters
+    ----------
+    all_texts_df: pd.DataFrame :
+        The pandas DataFrame that we are slicing. The formatting should match
+        the structure that appears in the `split_dataset` function.
+    slice_length: int :
+        The maximum number of tokens any slice should be generated from the
+        input DataFrame. (Default value = 25)
+    overlap_percent: float :
+        The number of tokens any adjacent slices can share. (Default value = 0)
+
+    Returns
+    -------
+    pd.DataFrame
+        pandas DataFrame that only holds the sliced version of the data and
+        their corresponding label.
+    """
 
     if overlap_percent >= 1 or overlap_percent < 0:
         raise ValueError("Invalid overlap amount")
@@ -193,7 +342,23 @@ def get_slices(all_texts_df: pd.DataFrame,
 
 def export_fasttext_data(df: pd.DataFrame, output_name: str,
                          slice_length: Optional[int] = 25,
-                         overlap_percent: float = 0):
+                         overlap_percent: float = 0) -> None:
+    """
+    Generate fasttext-compatible datasets
+
+    Parameters
+    ----------
+    df: pd.DataFrame :
+        The pandas DataFrame that will be used to derive the create the
+        fasttext dataset.
+    output_name: str :
+        The name of the file that will be genreated
+    slice_length: int :
+        The maximum number of tokens any slice should be generated from the
+        input DataFrame. (Default value = 25)
+    overlap_percent: float :
+        The number of tokens any adjacent slices can share. (Default value = 0)
+    """
 
     if not os.path.exists(os.path.dirname(output_name)):
         os.makedirs(os.path.dirname(output_name))
@@ -208,8 +373,39 @@ def export_fasttext_data(df: pd.DataFrame, output_name: str,
         )
 
 
-def construct_parser_preprocessor(subparser):
+def construct_parser_preprocessor(subparser) -> None:
+    """
+    Construct the preprocessor subparser.
+
+    Parameters
+    ----------
+    subparser
+        The subparser to modify that will include all necessary arguments to
+        perform preprocessing.
+    """
+
     def within_percent_interval(interval_str: str) -> float:
+        """
+        Checks whether or not the given string representation of a floating
+        point number is in the interval [0, 1].
+
+        Parameters
+        ----------
+        interval_str: str :
+            The string that needs to be checked for a valid value
+
+        Returns
+        -------
+        float
+            If valid, the number representation of interval_str
+
+        Raises
+        ------
+        ValueError
+            If interval_str cannot be converted to a floating pointer number
+        ArgumentTypeError
+            If the number is not within the interval [0, 1]
+        """
         interval = float(interval_str)
         if interval < 0 or interval > 1:
             raise ArgumentTypeError("Input given is out of bounds!")
@@ -272,7 +468,16 @@ def construct_parser_preprocessor(subparser):
     subparser.set_defaults(run=run_preprocessor)
 
 
-def run_preprocessor(args):
+def run_preprocessor(args) -> None:
+    """
+    Run the preprocessor
+
+    Parameters
+    ----------
+    args
+        The NameSpace of command line arguments generated by the preprocessor
+        argument parser
+    """
     train_df, test_df = split_dataset(
         export=args.export,
         split_percent=args.train_split,
@@ -294,19 +499,3 @@ def run_preprocessor(args):
         export_fasttext_data(
             test_df, test_slice_name, slice_length=args.slice_length
         )
-
-
-def main():
-    train_df, test_df = split_dataset()
-
-    train_slice_name = os.path.join(os.getcwd(), "filtered_data_clean",
-                                    "fasttext_train.txt")
-    test_slice_name = os.path.join(os.getcwd(), "filtered_data_clean",
-                                   "fasttext_test.txt")
-
-    export_fasttext_data(train_df, train_slice_name, slice_length=10)
-    export_fasttext_data(test_df, test_slice_name, slice_length=10)
-
-
-if __name__ == "__main__":
-    main()
