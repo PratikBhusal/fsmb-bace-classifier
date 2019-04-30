@@ -1,5 +1,5 @@
 import bace.classifiers.neural.neural_constants as neural_constants
-import bace.classifiers.neural.neural_classifier as nc
+
 
 from os import listdir
 
@@ -8,6 +8,9 @@ from argparse import ArgumentError
 from random import shuffle
 
 def run_nn(args):
+    # import here bc tf import is heavy
+    import bace.classifiers.neural.neural_classifier as nc
+
     def child_path(dir, fname):
         return dir + '/' + fname
 
@@ -94,7 +97,6 @@ def run_nn(args):
                 print(str)
 
         elif args.test_folder:
-
             clf.train(max_number_tokens=args.num_tokens,
                       glove_file=args.glove_embedding,
                       glove_dimensions=args.glove_dimensions,
@@ -120,10 +122,13 @@ def run_nn(args):
                     clf.add_validation_data("{0} {1}".format(name, fname), f.read(), name)
 
         clf.train(max_number_tokens=args.num_tokens,
-                  glove_file=args.glove_embedding[0],
-                  glove_dimensions=int(args.glove_embedding[1]),
-                  num_epochs=args.epochs,
-                  batch_size=args.batch_size
+                      glove_file=args.glove_embedding,
+                      glove_dimensions=args.glove_dimensions,
+                      num_epochs=args.epochs,
+                      diagnostic_printing=False,
+                      batch_size=args.batch_size,
+                      slice_length=args.slice_length,
+                      slice_overlap=args.slice_overlap
                   )
     else:
         raise Exception("Missing mandatory input arg - this error should be impossible")
@@ -187,8 +192,6 @@ def construct_parser_nn(subparser):
         metavar='[0-1)',
         help='percent of the slice that is overlapping with adjacent slices (half on each side)'
     )
-    subparser.add_argument(
-
     subparser.add_argument(
         '-n', '--num_tokens', type=int, default=neural_constants.MAX_NUMBER_TOKENS,
         help='maximum number of tokens, will increase as data increases and number of classes increases'

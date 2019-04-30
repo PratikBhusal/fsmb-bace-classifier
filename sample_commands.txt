@@ -1,8 +1,8 @@
 Takes the unclean data and filters it:
-python bace_driver.py pp bace_data/data -o bace_data/filtered_data --stopwords bace/DistinctCombinedStopWords.csv
+python bace_driver.py pp bace_data/data -o bace_data/filtered_data --stopwords bace/DistinctCombinedStopWords.csv --export all
 
 Takes the clean data and filters it:
-python bace_driver.py pp bace_data/data_clean -o bace_data/filtered_data_clean --stopwords bace/DistinctCombinedStopWords.csv
+python bace_driver.py pp bace_data/data_clean -o bace_data/filtered_data_clean --stopwords bace/DistinctCombinedStopWords.csv --export all
 
 Train and test on filtered, uncleaned data with BOW:
 python bace_driver.py bow bace_data/filtered_data/train_texts.csv -t bace_data/filtered_data/test_texts.csv -n 300
@@ -37,3 +37,9 @@ python bace_driver.py nn glove_embeddings/glove.6B.50d.txt 50 -i bace_data/nn/da
 
 Test folder
 python bace_driver.py nn glove_embeddings/glove.6B.50d.txt 50 -i bace_data/nn/data_clean -t bace_data/nn_test
+
+
+Fasttext
+
+Train and test on filtered data
+python3 bace_driver.py ft filtered_data_clean/ -m
