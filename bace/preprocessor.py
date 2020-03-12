@@ -1,19 +1,21 @@
-from glob import glob, iglob
-from nltk.corpus import stopwords
-from typing import List, Iterable, Text, Container, Tuple, Optional, Dict
-import numpy as np
+# coding=utf-8
 import os
+from argparse import ArgumentParser, ArgumentTypeError, Namespace
+from glob import glob, iglob
+from typing import Container, Dict, Iterable, List, Optional, Text, Tuple
+
+import numpy as np
 import pandas as pd
-from argparse import ArgumentTypeError
+from nltk.corpus import stopwords
 
 # Type aliases for filter_texts function
 Token = Text
 Tokens_str = Token
-Tokens = List[Token]
 
 
-def filter_tokens(tokens: Iterable[Text],
-                  stop_words: Optional[Container[Text]]) -> Tokens_str:
+def filter_tokens(
+    tokens: Iterable[Text], stop_words: Optional[Container[Text]]
+) -> Tokens_str:
     """
     Filter out unnecessary tokens from given list of tokens.
 
@@ -51,6 +53,7 @@ def filter_tokens(tokens: Iterable[Text],
             The next filtered token in the tokens list
 
         """
+
         def filter_token(token: Text) -> Text:
             """
             Filter the given token
@@ -64,6 +67,7 @@ def filter_tokens(tokens: Iterable[Text],
             Token
                 The filtered version of the current token
             """
+
             def strip_enum(token: Text) -> Text:
                 """
                 Remove any enumerations from the given token
@@ -81,8 +85,9 @@ def filter_tokens(tokens: Iterable[Text],
                     return ''
                 if token[0] == '(' and token[len(token) - 1] != ')':
                     return ''
-                if token[0] != '(' or (token[0] == '(' and token[len(token) -
-                                                                 1] == ')'):
+                if token[0] != '(' or (
+                    token[0] == '(' and token[len(token) - 1] == ')'
+                ):
                     return ''.join(enum_filter.split(token))
                 return ''
 
@@ -109,9 +114,9 @@ def filter_tokens(tokens: Iterable[Text],
     return ' '.join(token for token in yield_filtered_tokens(tokens))
 
 
-def get_filtered_file(filename: Text,
-                      stop_words: Optional[Container[Text]] = None
-                      ) -> Tokens_str:
+def get_filtered_file(
+    filename: Text, stop_words: Optional[Container[Text]] = None
+) -> Tokens_str:
     """
     Get the filtered version of a single file.
 
@@ -140,11 +145,9 @@ def get_filtered_file(filename: Text,
     raise ValueError("Invalid File name!")
 
 
-# def yield_filtered_files(should_export_extras: bool = False,
-#                          input_dir: str = "data_clean",
-def yield_filtered_files(input_dir: str = "data_clean",
-                         stop_words: Optional[Container[Text]] = None
-                         ) -> Iterable[pd.DataFrame]:
+def yield_filtered_files(
+    input_dir: str = "data_clean", stop_words: Optional[Container[Text]] = None
+) -> Iterable[pd.DataFrame]:
     """
     Yield the filtered version of all files corresponding to a specific label.
 
@@ -173,7 +176,8 @@ def yield_filtered_files(input_dir: str = "data_clean",
 
     for folder_path in iglob(os.path.join(os.path.abspath(input_dir), "*")):
         valid_file_data: Dict[Text, Tokens_str] = {
-            k: v for k, v in {
+            k: v
+            for k, v in {
                 file_name: get_filtered_file(file_name, stop_words)
                 for file_name in glob(os.path.join(folder_path, "*.txt"))
             }.items()
@@ -183,13 +187,16 @@ def yield_filtered_files(input_dir: str = "data_clean",
         if valid_file_data:
             folder_name = os.path.basename(folder_path)
 
-            texts_df = pd.DataFrame({
-                "filename": list(
-                    os.path.basename(name) for name in valid_file_data.keys()
-                ),
-                "label": folder_name,
-                "tokens": list(valid_file_data.values())
-            })
+            texts_df: pd.DataFrame = pd.DataFrame(
+                {
+                    "filename": [
+                        os.path.basename(name)
+                        for name in valid_file_data.keys()
+                    ],
+                    "label": folder_name,
+                    "tokens": list(valid_file_data.values()),
+                }
+            )
 
             # if should_export_extras:
             #     export_folder = os.path.join(filtered_folder, folder_name)
@@ -205,12 +212,13 @@ def yield_filtered_files(input_dir: str = "data_clean",
             yield texts_df
 
 
-def split_dataset(export: str = "all",
-                  split_percent: float = 0.8,
-                  input_dir: str = "data",
-                  output_dir: str = "filtered_data_clean",
-                  stopwords_file_path: Optional[str] = None
-                  ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def split_dataset(
+    export: str = "all",
+    split_percent: float = 0.8,
+    input_dir: str = "data",
+    output_dir: str = "filtered_data_clean",
+    stopwords_file_path: Optional[str] = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Filter and split all of the input data into a train split and a test split.
 
@@ -257,13 +265,12 @@ def split_dataset(export: str = "all",
     train_arr: List[Tuple[str, str, str]] = []
     test_arr: List[Tuple[str, str, str]] = []
 
-    stop_words = set(stopwords.words('english'))
+    stop_words = set(stopwords.words("english"))
     if stopwords_file_path:
         with open(stopwords_file_path, "r") as fsmb_stop_words:
             stop_words.update(fsmb_stop_words.read().splitlines())
 
-    for df in yield_filtered_files(input_dir=input_dir,
-                                   stop_words=stop_words):
+    for df in yield_filtered_files(input_dir=input_dir, stop_words=stop_words):
 
         if export == "single" or export == "all":
             full_arr.extend(df.values)
@@ -277,30 +284,29 @@ def split_dataset(export: str = "all",
     if not os.path.exists(filtered_folder):
         os.makedirs(filtered_folder)
 
-    train_df = pd.DataFrame(train_arr,
-                            columns=["filename", "label", "tokens"])
-    test_df = pd.DataFrame(test_arr,
-                           columns=["filename", "label", "tokens"])
+    train_df = pd.DataFrame(train_arr, columns=["filename", "label", "tokens"])
+    test_df = pd.DataFrame(test_arr, columns=["filename", "label", "tokens"])
 
     if export == "single" or export == "all":
         pd.DataFrame(full_arr, columns=["filename", "label", "tokens"]).to_csv(
-            os.path.join(filtered_folder, "all_texts.csv"),
-            index=False
+            os.path.join(filtered_folder, "all_texts.csv"), index=False
         )
     if export == "split" or export == "all":
-        train_df.to_csv(os.path.join(filtered_folder, "train_texts.csv"),
-                        index=False
-                        )
-        test_df.to_csv(os.path.join(filtered_folder, "test_texts.csv"),
-                       index=False
-                       )
+        train_df.to_csv(
+            os.path.join(filtered_folder, "train_texts.csv"), index=False
+        )
+        test_df.to_csv(
+            os.path.join(filtered_folder, "test_texts.csv"), index=False
+        )
 
     return train_df, test_df
 
 
-def get_slices(all_texts_df: pd.DataFrame,
-               slice_length: int = 25,
-               overlap_percent: float = 0) -> pd.DataFrame:
+def get_slices(
+    all_texts_df: pd.DataFrame,
+    slice_length: int = 25,
+    overlap_percent: float = 0,
+) -> pd.DataFrame:
     """
     Split the given pandas DataFrame into many slices.
 
@@ -332,7 +338,7 @@ def get_slices(all_texts_df: pd.DataFrame,
     for row in all_texts_df.itertuples(index=False):
         tokens = row.tokens.split()
         snippets = [
-            ' '.join(tokens[i:min(len(tokens), i + slice_length)])
+            ' '.join(tokens[i : min(len(tokens), i + slice_length)])
             for i in range(0, len(tokens), step)
         ]
         all_slices += [(row.label, snippet) for snippet in snippets]
@@ -340,9 +346,12 @@ def get_slices(all_texts_df: pd.DataFrame,
     return pd.DataFrame(all_slices, columns=["label", "slice"])
 
 
-def export_fasttext_data(df: pd.DataFrame, output_name: str,
-                         slice_length: Optional[int] = 25,
-                         overlap_percent: float = 0) -> None:
+def export_fasttext_data(
+    df: pd.DataFrame,
+    output_name: str,
+    slice_length: Optional[int] = 25,
+    overlap_percent: float = 0,
+) -> None:
     """
     Generate fasttext-compatible datasets
 
@@ -369,11 +378,11 @@ def export_fasttext_data(df: pd.DataFrame, output_name: str,
         np.savetxt(
             output_name,
             get_slices(df, slice_length, overlap_percent).values,
-            fmt="%s"
+            fmt="%s",
         )
 
 
-def construct_parser_preprocessor(subparser) -> None:
+def construct_parser_preprocessor(subparser: ArgumentParser) -> None:
     """
     Construct the preprocessor subparser.
 
@@ -411,6 +420,7 @@ def construct_parser_preprocessor(subparser) -> None:
             raise ArgumentTypeError("Input given is out of bounds!")
 
         return interval
+
     """
     if subparser:
         preprocess_parser = subparser.add_parser(
@@ -426,49 +436,63 @@ def construct_parser_preprocessor(subparser) -> None:
     """
 
     subparser.add_argument(
-        'input_dir', type=str, default="data_clean", metavar="input-dir",
-        help='Input directory to preprocess'
+        "input_dir",
+        type=str,
+        default="data_clean",
+        metavar="input-dir",
+        help='Input directory to preprocess',
     )
 
     subparser.add_argument(
-        '-o', '--output-dir', type=str, default="filtered_data_clean",
-        help='Output directory to hold preprocessed data_clean'
+        "-o",
+        "--output-dir",
+        type=str,
+        default="filtered_data_clean",
+        help='Output directory to hold preprocessed data_clean',
     )
 
     subparser.add_argument(
-        '--stopwords', type=str, default=None,
-        help='Path to the .csv stop words file'
+        "--stopwords",
+        type=str,
+        default=None,
+        help='Path to the .csv stop words file',
     )
 
     # Make file generation options mutually exclusive
     # Note, all 3 of the flags appear. However, we only want 1 of them to
     # appear.
     subparser.add_argument(
-        '--export', type=str, default="single",
+        "--export",
+        type=str,
+        default="single",
         choices=["single", "split", "fasttext", "all"],
         help='Indicate whether you only want a single file holding all of the '
         'preprocessed data_clean, or both. If "split\" was chosen, it '
         'utilizes the "--train-split" argument to know how big to make the '
         'training and testing sets. If fasttext is given, it utilizes the '
-        '"--slice-length" argument to know how big to make each slice'
+        '"--slice-length" argument to know how big to make each slice',
     )
 
     subparser.add_argument(
-        '--slice_length', type=int, default=25,
-        help="Number of tokens to have per slice of a file."
+        '--slice_length',
+        type=int,
+        default=25,
+        help="Number of tokens to have per slice of a file.",
     )
 
     subparser.add_argument(
-        '--train-split', type=within_percent_interval, default=.8,
+        '--train-split',
+        type=within_percent_interval,
+        default=0.8,
         metavar="[0-1]",
         help="Percentage in interval [0,1] of total data_clean going to the \
-        training dataset."
+        training dataset.",
     )
 
     subparser.set_defaults(run=run_preprocessor)
 
 
-def run_preprocessor(args) -> None:
+def run_preprocessor(args: Namespace) -> None:
     """
     Run the preprocessor
 
@@ -483,7 +507,7 @@ def run_preprocessor(args) -> None:
         split_percent=args.train_split,
         input_dir=args.input_dir,
         output_dir=args.output_dir,
-        stopwords_file_path=args.stopwords
+        stopwords_file_path=args.stopwords,
     )
 
     if args.export == "fasttext" or args.export == "all":

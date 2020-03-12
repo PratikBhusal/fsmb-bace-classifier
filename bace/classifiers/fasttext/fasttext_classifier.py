@@ -1,13 +1,15 @@
-from os.path import join as path_join
+# coding=utf-8
+from argparse import ArgumentParser, Namespace
+from os import makedirs as make_dirs
 from os.path import abspath as abs_path
 from os.path import exists as path_exists
-from os import makedirs as make_dirs
+from os.path import join as path_join
+
 # from fasttext import supervised, train_supervised
 import fasttext as ft
-from typing import List, Iterator
 
 
-def fancy_prediction(classifier, input_str: str) -> str:
+def fancy_prediction(classifier: ft.FastText._FastText, input_str: str) -> str:
     """
     Helper function to print out prediction results of a single input string.
     The input string will be given a list of labels and their corresponding
@@ -26,15 +28,13 @@ def fancy_prediction(classifier, input_str: str) -> str:
         The well-formmated results of the prediction on the given input string.
 
     """
-    predictions = classifier.predict_proba(
-        [input_str], k=len(classifier.labels)
+    labels, probabilities = classifier.predict(
+        input_str, k=len(classifier.labels)
     )
     longest_label_len = max(map(len, classifier.labels))
     predict_str = ""
-    for curr_string_prediction in predictions:
-        for label, prob in curr_string_prediction:
-            predict_str += f"{str(label).ljust(longest_label_len)}: {prob}"
-            predict_str += '\n'
+    for label, prob in zip(labels, probabilities):
+        predict_str += f"{str(label).ljust(longest_label_len)}: {prob}\n"
     predict_str += "Text:\n"
     # tokens = input_str.split()
     # if len(tokens) > 21:
@@ -44,7 +44,7 @@ def fancy_prediction(classifier, input_str: str) -> str:
     return predict_str
 
 
-def run_fasttext(args) -> None:
+def run_fasttext(args: Namespace) -> None:
     """
     Function to run the fasttext classifier with the given command line
     arguments.
@@ -60,15 +60,19 @@ def run_fasttext(args) -> None:
     elif args.test_file and not path_exists(abs_path(args.test_file)):
         raise ValueError("Invalid input test file path given!")
     elif args.predict_test_split and not args.test_file:
-        raise ValueError("Cannot predict on test_file without specifying its \
-                         path!")
+        raise ValueError(
+            "Cannot predict on test_file without specifying its \
+                         path!"
+        )
 
     train_file_name = abs_path(args.train_file)
-    classifier = ft.supervised(train_file_name, args.input_binary)
+    classifier = ft.train_supervised(train_file_name)
+    classifier.save_model(args.input_binary)
 
     output_file = None
     if args.metrics:
         from sys import stdout
+
         output_file = stdout
     else:
         if not path_exists(abs_path(args.output_dir)):
@@ -79,40 +83,42 @@ def run_fasttext(args) -> None:
 
     if args.test_file:
         test_file_name = abs_path(args.test_file)
-        results = classifier.test(test_file_name)
-        print("Number of test slices:", results.nexamples, file=output_file)
-        print("Precision:", results.precision, file=output_file)
-        print("Recall:", results.recall, file=output_file)
+        n_samples, precision, recall = classifier.test(test_file_name)
+        print("Number of test slices:", n_samples, file=output_file)
+        print("Precision:", precision, file=output_file)
+        print("Recall:", recall, file=output_file)
         print(file=output_file)
 
     if args.predict_strip or args.predict_test_split or args.predict_test_texts:
         print("Prediction results:\n", file=output_file)
 
     if args.predict_strip:
-        print(fancy_prediction(classifier, args.predict_strip),
-              file=output_file)
+        print(
+            fancy_prediction(classifier, args.predict_strip), file=output_file
+        )
     elif args.predict_test_split and args.test_file:
         with open(test_file_name) as f:
             for line in f.read().splitlines():
                 print(
-                    fancy_prediction(
-                        classifier,
-                        ' '.join(line.split()[1:])
-                    ), '\n',
+                    fancy_prediction(classifier, ' '.join(line.split()[1:])),
+                    '\n',
                     sep='',
-                    file=output_file
+                    file=output_file,
                 )
     elif args.predict_test_texts:
         with open(args.predict_test_texts) as f:
             for line in f.read().splitlines()[1:]:
                 filename, label, tokens = line.split(',')
                 print(filename, ':', sep='', file=output_file)
-                print(fancy_prediction(classifier, tokens), '\n', sep='',
-                      file=output_file
-                      )
+                print(
+                    fancy_prediction(classifier, tokens),
+                    '\n',
+                    sep='',
+                    file=output_file,
+                )
 
 
-def construct_parser_fasttext(subparser):
+def construct_parser_fasttext(subparser: ArgumentParser) -> None:
     """
     Construct the Fasttext subparser
 
@@ -137,46 +143,63 @@ def construct_parser_fasttext(subparser):
         )
     """
     subparser.add_argument(
-        'train_file', type=str, default="fasttext_train.txt",
-        help='Path to training file'
+        'train_file',
+        type=str,
+        default="fasttext_train.txt",
+        help='Path to training file',
     )
     subparser.add_argument(
-        '-b', '--input_binary', type=str, default="model",
-        help='Name of fasttext model binary that will be generated.'
+        '-b',
+        '--input_binary',
+        type=str,
+        default="model",
+        help='Name of fasttext model binary that will be generated.',
     )
     subparser.add_argument(
-        '--test-file', type=str,
+        '--test-file',
+        type=str,
         help='Path to testing file. The default name generated by the \
-        preprocessor for this file is "fasttext_test.txt"'
+        preprocessor for this file is "fasttext_test.txt"',
     )
     subparser.add_argument(
-        '-o', '--output-dir', type=str, default="results",
-        help='Output directory to hold fasttext classifier output files'
+        '-o',
+        '--output-dir',
+        type=str,
+        default="results",
+        help='Output directory to hold fasttext classifier output files',
     )
 
     # Make results showing options are mutually exclusive
     fasttext_results = subparser.add_mutually_exclusive_group()
     fasttext_results.add_argument(
-        '-m', '--metrics', action="store_true", default=False,
-        help="Flag to enable/disable showing fasttext metrics to command line"
+        '-m',
+        '--metrics',
+        action="store_true",
+        default=False,
+        help="Flag to enable/disable showing fasttext metrics to command line",
     )
     fasttext_results.add_argument(
-        '--metrics-file', type=str, default="fasttext_metrics.txt",
-        help='Filename to store fasttext metrics'
+        '--metrics-file',
+        type=str,
+        default="fasttext_metrics.txt",
+        help='Filename to store fasttext metrics',
     )
 
     # Make results prediction options are mutually exclusive
     fasttext_predictions = subparser.add_mutually_exclusive_group()
     fasttext_predictions.add_argument(
-        '--predict-test-split', action="store_true", default=False,
+        '--predict-test-split',
+        action="store_true",
+        default=False,
         help='Flag to indicate that you want to predict the splits in the \
-        test_file given via the "--test_file" argument'
+        test_file given via the "--test_file" argument',
     )
     fasttext_predictions.add_argument(
-        '--predict-test-texts', type=str,
+        '--predict-test-texts',
+        type=str,
         help='Path of the test_texts.csv generated by the \
         preprocessor when using the "--export split" option (default returned \
-        file from pp --export split is "test_texts.csv")'
+        file from pp --export split is "test_texts.csv")',
     )
     fasttext_predictions.add_argument(
         '--predict-strip', type=str, help='String to predict upon'
