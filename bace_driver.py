@@ -26,10 +26,9 @@ def construct_primary_parser():
             The function that constructs the superparser for the task
 
         """
-        yield 'pp', construct_parser_preprocessor
-        yield 'ft', construct_parser_fasttext
-        yield 'bow', construct_parser_bow
-        yield 'nn', construct_parser_nn
+        yield "pp", construct_parser_preprocessor
+        yield "ft", construct_parser_fasttext
+        yield "bow", construct_parser_bow
 
     parser = argparse.ArgumentParser(description='Classify documents and \
                                      subsections using various NLP techniques')
